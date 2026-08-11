@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: boane-conecta-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-boane_conecta}
+      POSTGRES_USER: ${POSTGRES_USER:-boane_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-boane_password_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-boane_user} -d ${POSTGRES_DB:-boane_conecta}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: boane-conecta-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-boane_conecta}
+      DATABASE_USERNAME: ${POSTGRES_USER:-boane_user}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-boane_password_dev}
+      JWT_SECRET: ${JWT_SECRET:-replace-with-a-strong-secret-at-least-256-bits-long-enough-for-hs256}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-900}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800}
+      STORAGE_ROOT: ${STORAGE_ROOT:-/app/storage/uploads}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    volumes:
+      - ./storage:/app/storage
+
+volumes:
+  postgres_data:
