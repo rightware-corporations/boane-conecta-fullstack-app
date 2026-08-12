@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -175,8 +176,9 @@ public class DocumentService {
         User citizen = requireUser(citizenUserId);
         CitizenRequest request = citizenRequestRepository.findByIdAndCitizenUser(requestId, citizen)
                 .orElseThrow(() -> new ResourceNotFoundException("Citizen request not found"));
-        return requestDocumentsRepository.findByRequestOrderByDocumentCreatedAtDesc(request).stream()
+        return requestDocumentsRepository.findByRequest(request).stream()
                 .map(RequestDocuments::getDocument)
+                .sorted(Comparator.comparing(Document::getCreatedAt).reversed())
                 .map(this::toResponse)
                 .toList();
     }
