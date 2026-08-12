@@ -10,6 +10,6 @@ import java.util.List;
 
 @Repository
 public interface RequestDocumentsRepository extends JpaRepository<RequestDocuments, RequestDocuments.RequestDocumentId> {
-    List<RequestDocuments> findByRequestOrderByDocumentCreatedAtDesc(CitizenRequest request);
+    List<RequestDocuments> findByRequest(CitizenRequest request);
     boolean existsByRequestAndDocument(CitizenRequest request, Document document);
 }
