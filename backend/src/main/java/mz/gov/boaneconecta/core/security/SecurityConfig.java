@@ -68,6 +68,7 @@ public class SecurityConfig {
                             "/api/v1/auth/register",
                             "/api/v1/auth/refresh").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/public/complaints").permitAll()
                     .requestMatchers("/api/v1/citizen/**").hasRole("CITIZEN")
                     .requestMatchers("/api/v1/admin/**").hasAnyRole(
                             "SUPER_ADMIN", "ADMIN", "MANAGER", "EDITOR", "EMPLOYEE")
