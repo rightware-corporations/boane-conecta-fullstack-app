@@ -72,7 +72,7 @@ public class AppointmentService {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        slot.setStatus(SlotStatus.BOOKED);
+        slot.setStatus(SlotStatus.FULL);
         appointmentSlotRepository.saveAndFlush(slot);
         return toResponse(appointmentRepository.saveAndFlush(appointment));
     }
@@ -134,9 +134,9 @@ public class AppointmentService {
             if (newStatus == AppointmentStatus.CANCELLED) {
                 slot.setStatus(SlotStatus.AVAILABLE);
             } else if (newStatus == AppointmentStatus.COMPLETED || newStatus == AppointmentStatus.NO_SHOW) {
-                slot.setStatus(SlotStatus.CLOSED);
+                slot.setStatus(SlotStatus.BLOCKED);
             } else {
-                slot.setStatus(SlotStatus.BOOKED);
+                slot.setStatus(SlotStatus.FULL);
             }
             appointmentSlotRepository.saveAndFlush(slot);
         }
