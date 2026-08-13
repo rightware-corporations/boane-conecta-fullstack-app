@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Search, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
 import { ServiceCategoryFilter } from '@/components/services/ServiceCategoryFilter';
 import { ServiceCard } from '@/components/services/ServiceCard';
 import { ServiceDetailModal } from '@/components/services/ServiceDetailModal';
@@ -21,6 +21,23 @@ interface Service {
   active: boolean;
 }
 
+type ApiResponse<T> = { success?: boolean; data?: T; message?: string };
+
+const toService = (item: any): Service => ({
+  id: String(item.id),
+  name: item.name || item.title || 'Serviço municipal',
+  description: item.description || null,
+  category: item.category || item.departmentName || item.department?.name || 'Geral',
+  duration: item.duration || item.processingTime || item.estimatedProcessingTime || null,
+  price: item.price || item.baseFee || item.fee || null,
+  requirements: Array.isArray(item.requirements)
+    ? item.requirements.map((r: any) => r.description || r.name || r.title).filter(Boolean).join('\n')
+    : item.requirements || null,
+  documents: item.documents || null,
+  icon: item.icon || null,
+  active: item.active ?? item.status === 'ACTIVE' ?? true,
+});
+
 export default function Servicos() {
   const [activeCategory, setActiveCategory] = useState('todos');
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,13 +47,9 @@ export default function Servicos() {
   const { data: services, isLoading } = useQuery({
     queryKey: ['public-services'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-      if (error) throw error;
-      return data as Service[];
+      const response = await api.get<ApiResponse<any[]> | any[]>('/public/services');
+      const data = Array.isArray(response) ? response : response.data || [];
+      return data.map(toService).filter((service) => service.active);
     },
   });
 
@@ -57,7 +70,6 @@ export default function Servicos() {
 
   return (
     <Layout>
-      {/* Hero */}
       <section className="bg-primary py-16 lg:py-20">
         <div className="container">
           <div className="text-center max-w-2xl mx-auto">
@@ -67,8 +79,6 @@ export default function Servicos() {
             <p className="mt-4 text-lg text-primary-foreground/80">
               Encontre informações e pague pelos serviços disponíveis no Conselho Municipal de Boane
             </p>
-
-            {/* Search */}
             <div className="mt-8 relative max-w-xl mx-auto">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -85,11 +95,7 @@ export default function Servicos() {
 
       <section className="py-12 lg:py-16">
         <div className="container">
-          <ServiceCategoryFilter
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-          />
-
+          <ServiceCategoryFilter activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
           {isLoading ? (
             <div className="flex justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -98,14 +104,9 @@ export default function Servicos() {
             <>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {filteredServices?.map((service) => (
-                  <ServiceCard
-                    key={service.id}
-                    service={service}
-                    onClick={() => setSelectedService(service)}
-                  />
+                  <ServiceCard key={service.id} service={service} onClick={() => setSelectedService(service)} />
                 ))}
               </div>
-
               {(!filteredServices || filteredServices.length === 0) && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">
@@ -118,21 +119,10 @@ export default function Servicos() {
         </div>
       </section>
 
-      {/* Service Detail Modal */}
       {selectedService && (
-        <ServiceDetailModal
-          service={selectedService}
-          onClose={() => setSelectedService(null)}
-          onPay={handlePay}
-        />
+        <ServiceDetailModal service={selectedService} onClose={() => setSelectedService(null)} onPay={handlePay} />
       )}
-
-      {/* Payment Dialog */}
-      <ServicePaymentDialog
-        service={paymentService}
-        open={!!paymentService}
-        onClose={() => setPaymentService(null)}
-      />
+      <ServicePaymentDialog service={paymentService} open={!!paymentService} onClose={() => setPaymentService(null)} />
     </Layout>
   );
 }
