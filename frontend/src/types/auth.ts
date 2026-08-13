@@ -3,9 +3,13 @@ export type UserRole = 'super_admin' | 'admin' | 'editor' | 'funcionario' | 'ges
 export interface User {
   id: string;
   email: string;
-  email_verified?: boolean;
-  created_at: string;
-  updated_at: string;
+  fullName?: string | null;
+  phone?: string | null;
+  status?: string;
+  emailVerified?: boolean;
+  roles?: string[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Profile {
@@ -27,6 +31,9 @@ export interface Profile {
 
 export interface AuthSession {
   token: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
   user: User;
   profile: Profile;
   expires_at: string;
