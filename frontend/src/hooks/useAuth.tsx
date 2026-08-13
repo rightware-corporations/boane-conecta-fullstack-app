@@ -1,16 +1,18 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import type { UserRole, AuthContextType, LoginCredentials, RegisterData, Profile } from '@/types';
-
-// Simplified User type for our context
-interface User {
-  id: string;
-  email: string;
-  created_at: string;
-}
+import { authService } from '@/services/auth.service';
+import { getAuthToken, getRefreshToken, clearAuthTokens } from '@/lib/api';
+import type { UserRole, AuthContextType, LoginCredentials, RegisterData, Profile, User } from '@/types';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const permissionsByRole: Record<UserRole, string[]> = {
+  super_admin: ['*'],
+  admin: ['admin.dashboard.view', 'admin.users.manage', 'admin.services.manage', 'admin.requests.manage', 'admin.reports.view'],
+  editor: ['admin.dashboard.view', 'admin.news.manage', 'admin.announcements.manage'],
+  funcionario: ['admin.dashboard.view', 'admin.services.manage', 'admin.requests.manage'],
+  gestor: ['admin.dashboard.view', 'admin.projects.manage', 'admin.reports.view'],
+  municipe: ['citizen.profile.view', 'citizen.profile.edit', 'citizen.requests.view', 'citizen.requests.create', 'citizen.payments.view', 'citizen.documents.view', 'citizen.documents.upload'],
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -19,103 +21,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const getPermissions = (userRole: UserRole | null): string[] => {
-    if (!userRole) return [];
-    const rolePermissions: Record<UserRole, string[]> = {
-      super_admin: ['*'],
-      admin: [
-        'admin.dashboard.view', 'admin.users.manage', 'admin.services.manage',
-        'admin.news.manage', 'admin.projects.manage', 'admin.requests.manage', 'admin.reports.view'
-      ],
-      editor: ['admin.dashboard.view', 'admin.news.manage', 'admin.announcements.manage'],
-      funcionario: ['admin.dashboard.view', 'admin.services.manage', 'admin.requests.manage'],
-      gestor: ['admin.dashboard.view', 'admin.projects.manage', 'admin.reports.view'],
-      municipe: [
-        'citizen.profile.view', 'citizen.profile.edit', 'citizen.requests.view',
-        'citizen.requests.create', 'citizen.payments.view', 'citizen.documents.view', 'citizen.documents.upload'
-      ]
-    };
-    return rolePermissions[userRole] || [];
+  const applySession = (nextUser: User, nextProfile: Profile) => {
+    setUser(nextUser);
+    setProfile(nextProfile);
+    setRole(nextProfile.role);
+    setPermissions(permissionsByRole[nextProfile.role] || []);
   };
 
-  const loadProfile = async (userId: string) => {
-    // Load profile
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (profileData) {
-      setProfile(profileData as unknown as Profile);
-    }
-
-    // Load role from user_roles table
-    const { data: roleData } = await supabase.rpc('get_user_role', { _user_id: userId });
-    
-    const userRole = (roleData as UserRole) || (profileData?.role as UserRole) || 'municipe';
-    setRole(userRole);
-    setPermissions(getPermissions(userRole));
-  };
-
-  const mapSupabaseUser = (su: SupabaseUser): User => ({
-    id: su.id,
-    email: su.email || '',
-    created_at: su.created_at,
-  });
-
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(mapSupabaseUser(session.user));
-        // Use setTimeout to avoid Supabase client deadlock
-        setTimeout(() => loadProfile(session.user.id), 0);
-      } else {
-        setUser(null);
-        setProfile(null);
-        setRole(null);
-        setPermissions([]);
-      }
-      setLoading(false);
-    });
-
-    // THEN check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(mapSupabaseUser(session.user));
-        loadProfile(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const login = async (credentials: LoginCredentials): Promise<{ error: string | null }> => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: credentials.email,
-      password: credentials.password,
-    });
-    if (error) return { error: error.message };
-    return { error: null };
-  };
-
-  const register = async (data: RegisterData): Promise<{ error: string | null }> => {
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: { full_name: data.full_name },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    if (error) return { error: error.message };
-    return { error: null };
-  };
-
-  const logout = async (): Promise<void> => {
-    await supabase.auth.signOut();
+  const clearSession = () => {
     setUser(null);
     setProfile(null);
     setRole(null);
@@ -123,26 +36,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshProfile = async (): Promise<void> => {
-    if (user) {
-      await loadProfile(user.id);
+    const result = await authService.me();
+    if (result.data) applySession(result.data.user, result.data.profile);
+    else {
+      clearAuthTokens();
+      clearSession();
     }
   };
 
-  const isAuthenticated = !!user;
+  useEffect(() => {
+    let active = true;
+    async function bootstrap() {
+      try {
+        if (!getAuthToken() && getRefreshToken()) await authService.refreshToken();
+        if (getAuthToken()) {
+          const result = await authService.me();
+          if (active && result.data) applySession(result.data.user, result.data.profile);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    bootstrap();
+    return () => { active = false; };
+  }, []);
+
+  const login = async (credentials: LoginCredentials): Promise<{ error: string | null }> => {
+    const result = await authService.login(credentials);
+    if (result.error || !result.data) return { error: result.error || 'Login failed' };
+    applySession(result.data.user, result.data.profile);
+    return { error: null };
+  };
+
+  const register = async (data: RegisterData): Promise<{ error: string | null }> => {
+    const result = await authService.register(data);
+    return { error: result.error || null };
+  };
+
+  const logout = async (): Promise<void> => {
+    await authService.logout();
+    clearSession();
+  };
 
   return (
-    <AuthContext.Provider value={{
-      user: user as any,
-      profile,
-      role,
-      permissions,
-      isAuthenticated,
-      isLoading: loading,
-      login,
-      register,
-      logout,
-      refreshProfile,
-    }}>
+    <AuthContext.Provider value={{ user, profile, role, permissions, isAuthenticated: !!user, isLoading: loading, login, register, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
@@ -150,8 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }
