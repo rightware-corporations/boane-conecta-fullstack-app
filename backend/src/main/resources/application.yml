@@ -1,11 +1,11 @@
 server:
-  port: ${BACKEND_PORT:8080}
+  port: ${PORT:${BACKEND_PORT:8080}}
 
 spring:
   application:
     name: boane-conecta-backend
   profiles:
-    active: local
+    active: ${SPRING_PROFILES_ACTIVE:local}
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/boane_conecta}
     username: ${DATABASE_USERNAME:boane_user}
