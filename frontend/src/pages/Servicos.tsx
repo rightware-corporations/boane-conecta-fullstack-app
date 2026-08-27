@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Search, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { ServiceCategoryFilter } from '@/components/services/ServiceCategoryFilter';
 import { ServiceCard } from '@/components/services/ServiceCard';
@@ -23,7 +24,19 @@ interface Service {
 
 type ApiResponse<T> = { success?: boolean; data?: T; message?: string };
 
-const toService = (item: any): Service => ({
+type PublicServiceRecord = Partial<Service> & {
+  title?: string;
+  departmentName?: string;
+  department?: { name?: string };
+  processingTime?: string;
+  estimatedProcessingTime?: string;
+  baseFee?: string;
+  fee?: string;
+  requirements?: string | Array<{ description?: string; name?: string; title?: string }> | null;
+  status?: string;
+};
+
+const toService = (item: PublicServiceRecord): Service => ({
   id: String(item.id),
   name: item.name || item.title || 'Serviço municipal',
   description: item.description || null,
@@ -31,23 +44,24 @@ const toService = (item: any): Service => ({
   duration: item.duration || item.processingTime || item.estimatedProcessingTime || null,
   price: item.price || item.baseFee || item.fee || null,
   requirements: Array.isArray(item.requirements)
-    ? item.requirements.map((r: any) => r.description || r.name || r.title).filter(Boolean).join('\n')
+    ? item.requirements.map((requirement) => requirement.description || requirement.name || requirement.title).filter(Boolean).join('\n')
     : item.requirements || null,
   documents: item.documents || null,
   icon: item.icon || null,
-  active: item.active ?? item.status === 'ACTIVE' ?? true,
+  active: item.active ?? (item.status ? item.status === 'ACTIVE' : true),
 });
 
 export default function Servicos() {
+  const [searchParams] = useSearchParams();
   const [activeCategory, setActiveCategory] = useState('todos');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [paymentService, setPaymentService] = useState<Service | null>(null);
 
   const { data: services, isLoading } = useQuery({
     queryKey: ['public-services'],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<any[]> | any[]>('/public/services');
+      const response = await api.get<ApiResponse<PublicServiceRecord[]> | PublicServiceRecord[]>('/public/services');
       const data = Array.isArray(response) ? response : response.data || [];
       return data.map(toService).filter((service) => service.active);
     },
