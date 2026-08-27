@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { api, getErrorMessage } from '@/lib/api';
 import type {
   Announcement,
   Tender,
@@ -17,8 +17,8 @@ export const publicService = {
       const response = await api.get<ApiResponse<NewsArticle>>(`/public/news/${id}`);
       if (response.success && response.data) return { data: response.data };
       return { error: response.message || 'News article not found' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching news article' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching news article') };
     }
   },
 
@@ -28,8 +28,8 @@ export const publicService = {
       const response = await api.get<ApiResponse<NewsArticle[]>>(`/public/news?${params}`);
       if (response.success) return { data: response.data || [] };
       return { error: response.message || 'Failed to fetch related news' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching related news' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching related news') };
     }
   },
 
@@ -43,8 +43,8 @@ export const publicService = {
       const response = await api.get<ApiResponse<Announcement[]>>(url);
       if (response.success) return { data: response.data };
       return { error: response.message || 'Failed to fetch announcements' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching announcements' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching announcements') };
     }
   },
 
@@ -57,8 +57,8 @@ export const publicService = {
       const response = await api.get<ApiResponse<Tender[]>>(url);
       if (response.success) return { data: response.data };
       return { error: response.message || 'Failed to fetch tenders' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching tenders' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching tenders') };
     }
   },
 
@@ -71,8 +71,8 @@ export const publicService = {
       const response = await api.get<ApiResponse<Document[]>>(url);
       if (response.success) return { data: response.data };
       return { error: response.message || 'Failed to fetch documents' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching documents' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching documents') };
     }
   },
 
@@ -85,8 +85,8 @@ export const publicService = {
       const response = await api.get<ApiResponse<GalleryItem[]>>(url);
       if (response.success) return { data: response.data };
       return { error: response.message || 'Failed to fetch gallery items' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching gallery' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching gallery') };
     }
   },
 
@@ -98,8 +98,8 @@ export const publicService = {
       const response = await api.get<ApiResponse<Faq[]>>(url);
       if (response.success) return { data: response.data };
       return { error: response.message || 'Failed to fetch FAQs' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching FAQs' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching FAQs') };
     }
   },
 
@@ -108,8 +108,8 @@ export const publicService = {
       const response = await api.post<ApiResponse<{ message: string }>>('/contact/messages', message);
       if (response.success) return {};
       return { error: response.message || 'Failed to send message' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error sending message' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error sending message') };
     }
   },
 
@@ -118,8 +118,8 @@ export const publicService = {
       const response = await api.post<ApiResponse<{ reference: string }>>('/public/complaints', complaint);
       if (response.success) return { data: response.data };
       return { error: response.message || 'Failed to send complaint' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error sending complaint' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error sending complaint') };
     }
   },
 };

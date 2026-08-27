@@ -42,8 +42,26 @@ export function clearAuthTokens() {
   setRefreshToken(null);
 }
 
+type ApiErrorPayload = {
+  message?: string;
+  [key: string]: unknown;
+};
+
+function hasMessage(value: unknown): value is { message: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'message' in value &&
+    typeof value.message === 'string'
+  );
+}
+
+export function getErrorMessage(error: unknown, fallback: string): string {
+  return hasMessage(error) && error.message.trim() ? error.message : fallback;
+}
+
 export class ApiError extends Error {
-  constructor(public status: number, public statusText: string, public data?: any) {
+  constructor(public status: number, public statusText: string, public data?: ApiErrorPayload) {
     super(data?.message || `API Error ${status}: ${statusText}`);
     this.name = 'ApiError';
   }
@@ -62,11 +80,12 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const response = await fetch(url, { ...options, headers });
-  let data: any = undefined;
+  let data: unknown;
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/json')) data = await response.json();
 
-  if (!response.ok) throw new ApiError(response.status, response.statusText, data);
+  const errorData = typeof data === 'object' && data !== null ? data as ApiErrorPayload : undefined;
+  if (!response.ok) throw new ApiError(response.status, response.statusText, errorData);
   return data as T;
 }
 

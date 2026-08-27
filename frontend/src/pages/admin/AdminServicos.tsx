@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Briefcase } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, getErrorMessage } from '@/lib/api';
 import { toast } from 'sonner';
 
 type Envelope<T> = { success: boolean; data?: T; message?: string };
@@ -17,8 +17,8 @@ export default function AdminServicos() {
         const response = await api.get<Envelope<Service[]> | Service[]>('/admin/services');
         const data = response && typeof response === 'object' && 'success' in response ? response.data : response;
         setServices((data as Service[]) || []);
-      } catch (error: any) {
-        toast.error(error.message || 'Erro ao carregar serviços');
+      } catch (error) {
+        toast.error(getErrorMessage(error, 'Erro ao carregar serviços'));
       } finally {
         setLoading(false);
       }

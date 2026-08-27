@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { api, getErrorMessage } from '@/lib/api';
 import type {
   CitizenProfile,
   CitizenDashboard,
@@ -19,8 +19,8 @@ export const citizenService = {
       const response = await api.get<ApiResponse<CitizenProfile>>('/citizen/me');
       if (response.success) return { data: response.data };
       return { error: response.message || 'Failed to fetch profile' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -29,8 +29,8 @@ export const citizenService = {
       const response = await api.patch<ApiResponse<CitizenProfile>>('/citizen/me', updates);
       if (response.success) return { data: response.data };
       return { error: response.message || 'Failed to update profile' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -40,8 +40,8 @@ export const citizenService = {
       const response = await api.get<ApiResponse<CitizenDashboard>>('/citizen/dashboard');
       if (response.success) return { data: response.data };
       return { error: response.message || 'Failed to fetch dashboard' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -55,8 +55,8 @@ export const citizenService = {
       const response = await api.get<PaginatedResponse<ServiceRequest>>(url);
       if (response.success) return { data: response.data };
       return { error: 'Failed to fetch requests' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -69,8 +69,8 @@ export const citizenService = {
       const response = await api.get<ApiResponse<License[]>>(url);
       if (response.success) return { data: response.data };
       return { error: 'Failed to fetch licenses' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -80,8 +80,8 @@ export const citizenService = {
       const response = await api.get<ApiResponse<CitizenDocument[]>>('/citizen/documents');
       if (response.success) return { data: response.data };
       return { error: 'Failed to fetch documents' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -90,8 +90,8 @@ export const citizenService = {
       const response = await api.upload<ApiResponse<CitizenDocument>>('/citizen/documents', formData);
       if (response.success) return { data: response.data };
       return { error: 'Failed to upload document' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -104,8 +104,8 @@ export const citizenService = {
       const response = await api.get<ApiResponse<Payment[]>>(url);
       if (response.success) return { data: response.data };
       return { error: 'Failed to fetch payments' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -118,8 +118,8 @@ export const citizenService = {
       const response = await api.get<ApiResponse<Appointment[]>>(url);
       if (response.success) return { data: response.data };
       return { error: 'Failed to fetch appointments' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -129,8 +129,8 @@ export const citizenService = {
       const response = await api.get<ApiResponse<Notification[]>>('/citizen/notifications');
       if (response.success) return { data: response.data };
       return { error: 'Failed to fetch notifications' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -139,8 +139,8 @@ export const citizenService = {
       const response = await api.patch<ApiResponse<void>>(`/citizen/notifications/${id}`, { read: true });
       if (response.success) return {};
       return { error: 'Failed to update notification' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 
@@ -155,8 +155,8 @@ export const citizenService = {
       const response = await api.post<ApiResponse<{ payment_id: string; reference: string }>>('/payments/initiate', data);
       if (response.success) return { data: response.data };
       return { error: response.message || 'Failed to initiate payment' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error') };
     }
   },
 };

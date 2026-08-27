@@ -1,6 +1,6 @@
 import { useLocation, Link } from 'react-router-dom';
 import { Newspaper, Briefcase, FolderKanban, Users, LayoutDashboard, LogOut, ClipboardList } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { cn } from '@/lib/utils';
 import { LogoImage } from '@/components/layout/Header';

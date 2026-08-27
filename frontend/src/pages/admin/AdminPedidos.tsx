@@ -4,7 +4,7 @@ import { FileText } from 'lucide-react';
 
 export default function AdminPedidos() {
   return (
-    <AdminLayout>
+    <AdminLayout title="Pedidos" subtitle="Gestão de pedidos municipais">
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Pedidos</h1>

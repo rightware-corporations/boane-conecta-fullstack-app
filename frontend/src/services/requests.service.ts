@@ -1,9 +1,10 @@
-import { api } from '@/lib/api';
-import type { 
+import { api, getErrorMessage } from '@/lib/api';
+import type {
   ServiceRequest,
-  AdminServiceRequest, 
-  ApiResponse, 
-  PaginatedResponse 
+  AdminServiceRequest,
+  ApiResponse,
+  PaginatedResponse,
+  Pagination,
 } from '@/types';
 
 export const requestsService = {
@@ -23,14 +24,14 @@ export const requestsService = {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to create service request' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error creating service request' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error creating service request') };
     }
   },
 
   async getServiceRequestByNumber(requestNumber: string, nuit?: string): Promise<{ data?: ServiceRequest; error?: string }> {
     try {
-      const body: any = { reference_number: requestNumber };
+      const body: { reference_number: string; nuit?: string } = { reference_number: requestNumber };
       if (nuit) body.nuit = nuit;
 
       const response = await api.post<ApiResponse<ServiceRequest>>('/service-requests/lookup', body);
@@ -38,8 +39,8 @@ export const requestsService = {
         return { data: response.data };
       }
       return { error: response.message || 'Service request not found' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching service request' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching service request') };
     }
   },
 
@@ -53,7 +54,7 @@ export const requestsService = {
     service_id?: string;
     date_from?: string;
     date_to?: string;
-  }): Promise<{ data?: AdminServiceRequest[]; pagination?: any; error?: string }> {
+  }): Promise<{ data?: AdminServiceRequest[]; pagination?: Pagination; error?: string }> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.page) queryParams.append('page', params.page.toString());
@@ -67,13 +68,13 @@ export const requestsService = {
 
       const url = `/admin/service-requests${queryParams.toString() ? `?${queryParams}` : ''}`;
       const response = await api.get<PaginatedResponse<AdminServiceRequest>>(url);
-      
+
       if (response.success) {
         return { data: response.data, pagination: response.pagination };
       }
       return { error: 'Failed to fetch service requests' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching service requests' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching service requests') };
     }
   },
 
@@ -89,8 +90,8 @@ export const requestsService = {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to update service request' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error updating service request' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error updating service request') };
     }
   },
 
@@ -101,8 +102,8 @@ export const requestsService = {
         return { data: response.data };
       }
       return { error: response.message || 'Service request not found' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching service request' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching service request') };
     }
   },
 };

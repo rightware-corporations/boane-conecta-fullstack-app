@@ -1,9 +1,10 @@
-import { api } from '@/lib/api';
-import type { 
-  AdminUser, 
+import { api, getErrorMessage } from '@/lib/api';
+import type {
+  AdminUser,
   UserRole,
-  ApiResponse, 
-  PaginatedResponse 
+  ApiResponse,
+  PaginatedResponse,
+  Pagination,
 } from '@/types';
 
 export const usersService = {
@@ -14,7 +15,7 @@ export const usersService = {
     role?: UserRole;
     search?: string;
     active?: boolean;
-  }): Promise<{ data?: AdminUser[]; pagination?: any; error?: string }> {
+  }): Promise<{ data?: AdminUser[]; pagination?: Pagination; error?: string }> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.page) queryParams.append('page', params.page.toString());
@@ -25,13 +26,13 @@ export const usersService = {
 
       const url = `/admin/users${queryParams.toString() ? `?${queryParams}` : ''}`;
       const response = await api.get<PaginatedResponse<AdminUser>>(url);
-      
+
       if (response.success) {
         return { data: response.data, pagination: response.pagination };
       }
       return { error: 'Failed to fetch users' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching users' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching users') };
     }
   },
 
@@ -42,8 +43,8 @@ export const usersService = {
         return { data: response.data };
       }
       return { error: response.message || 'User not found' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching user' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching user') };
     }
   },
 
@@ -58,8 +59,8 @@ export const usersService = {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to update user' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error updating user' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error updating user') };
     }
   },
 
@@ -74,8 +75,8 @@ export const usersService = {
         return {};
       }
       return { error: response.message || 'Failed to invite user' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error inviting user' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error inviting user') };
     }
   },
 
@@ -86,8 +87,8 @@ export const usersService = {
         return {};
       }
       return { error: response.message || 'Failed to delete user' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error deleting user' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error deleting user') };
     }
   },
 };

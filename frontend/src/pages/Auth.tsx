@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import { Mail, Lock, User, LogIn } from 'lucide-react';

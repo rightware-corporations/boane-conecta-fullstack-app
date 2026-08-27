@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -8,10 +8,10 @@ interface ProtectedRouteProps {
   redirectTo?: string;
 }
 
-export function ProtectedRoute({ 
-  children, 
-  requireAuth = true, 
-  redirectTo = '/auth' 
+export function ProtectedRoute({
+  children,
+  requireAuth = true,
+  redirectTo = '/auth'
 }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();

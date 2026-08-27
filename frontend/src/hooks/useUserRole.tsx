@@ -1,4 +1,4 @@
-import { useAuth } from './useAuth';
+import { useAuth } from './use-auth';
 import type { UserRole } from '@/types';
 
 export function useUserRole() {
@@ -64,7 +64,7 @@ export function useUserRole() {
     role,
     permissions,
     loading: isLoading,
-    
+
     // Role checks
     isSuperAdmin,
     isAdmin,

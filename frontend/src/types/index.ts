@@ -4,7 +4,7 @@ export * from './auth';
 // Public types
 export * from './public';
 
-// Citizen types  
+// Citizen types
 export * from './citizen';
 
 // Admin types
@@ -33,3 +33,5 @@ export interface ApiError {
   status: number;
   code?: string;
 }
+
+export type Pagination = PaginatedResponse<unknown>['pagination'];

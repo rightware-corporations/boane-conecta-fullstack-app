@@ -1,8 +1,9 @@
-import { api } from '@/lib/api';
-import type { 
-  NewsArticle, 
-  ApiResponse, 
-  PaginatedResponse 
+import { api, getErrorMessage } from '@/lib/api';
+import type {
+  NewsArticle,
+  ApiResponse,
+  PaginatedResponse,
+  Pagination,
 } from '@/types';
 
 export const newsService = {
@@ -22,13 +23,13 @@ export const newsService = {
 
       const url = `/news${queryParams.toString() ? `?${queryParams}` : ''}`;
       const response = await api.get<ApiResponse<NewsArticle[]>>(url);
-      
+
       if (response.success) {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to fetch news' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching news' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching news') };
     }
   },
 
@@ -39,18 +40,18 @@ export const newsService = {
         return { data: response.data };
       }
       return { error: response.message || 'News article not found' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching news article' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching news article') };
     }
   },
 
-  // Admin endpoints  
+  // Admin endpoints
   async getAdminNews(params?: {
     page?: number;
     limit?: number;
     category?: string;
     search?: string;
-  }): Promise<{ data?: NewsArticle[]; pagination?: any; error?: string }> {
+  }): Promise<{ data?: NewsArticle[]; pagination?: Pagination; error?: string }> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.page) queryParams.append('page', params.page.toString());
@@ -60,13 +61,13 @@ export const newsService = {
 
       const url = `/admin/news${queryParams.toString() ? `?${queryParams}` : ''}`;
       const response = await api.get<PaginatedResponse<NewsArticle>>(url);
-      
+
       if (response.success) {
         return { data: response.data, pagination: response.pagination };
       }
       return { error: 'Failed to fetch news' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching news' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching news') };
     }
   },
 
@@ -77,8 +78,8 @@ export const newsService = {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to create news article' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error creating news article' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error creating news article') };
     }
   },
 
@@ -89,8 +90,8 @@ export const newsService = {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to update news article' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error updating news article' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error updating news article') };
     }
   },
 
@@ -101,8 +102,8 @@ export const newsService = {
         return {};
       }
       return { error: response.message || 'Failed to delete news article' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error deleting news article' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error deleting news article') };
     }
   },
 };

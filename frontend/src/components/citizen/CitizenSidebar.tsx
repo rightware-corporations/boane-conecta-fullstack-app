@@ -11,7 +11,7 @@ import {
   LogOut,
   Home,
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { LogoImage } from '@/components/layout/Header';
 import {

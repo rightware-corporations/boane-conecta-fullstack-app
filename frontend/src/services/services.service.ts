@@ -1,16 +1,17 @@
-import { api } from '@/lib/api';
-import type { 
-  Service, 
-  ApiResponse, 
-  PaginatedResponse 
+import { api, getErrorMessage } from '@/lib/api';
+import type {
+  Service,
+  ApiResponse,
+  PaginatedResponse,
+  Pagination,
 } from '@/types';
 
 export const servicesService = {
   // Public endpoints
-  async getPublicServices(params?: { 
-    category?: string; 
-    search?: string; 
-    active?: boolean 
+  async getPublicServices(params?: {
+    category?: string;
+    search?: string;
+    active?: boolean
   }): Promise<{ data?: Service[]; error?: string }> {
     try {
       const queryParams = new URLSearchParams();
@@ -20,13 +21,13 @@ export const servicesService = {
 
       const url = `/services${queryParams.toString() ? `?${queryParams}` : ''}`;
       const response = await api.get<ApiResponse<Service[]>>(url);
-      
+
       if (response.success) {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to fetch services' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching services' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching services') };
     }
   },
 
@@ -37,8 +38,8 @@ export const servicesService = {
         return { data: response.data };
       }
       return { error: response.message || 'Service not found' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching service' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching service') };
     }
   },
 
@@ -48,7 +49,7 @@ export const servicesService = {
     limit?: number;
     category?: string;
     search?: string;
-  }): Promise<{ data?: Service[]; pagination?: any; error?: string }> {
+  }): Promise<{ data?: Service[]; pagination?: Pagination; error?: string }> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.page) queryParams.append('page', params.page.toString());
@@ -58,13 +59,13 @@ export const servicesService = {
 
       const url = `/admin/services${queryParams.toString() ? `?${queryParams}` : ''}`;
       const response = await api.get<PaginatedResponse<Service>>(url);
-      
+
       if (response.success) {
         return { data: response.data, pagination: response.pagination };
       }
       return { error: 'Failed to fetch services' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching services' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching services') };
     }
   },
 
@@ -75,8 +76,8 @@ export const servicesService = {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to create service' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error creating service' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error creating service') };
     }
   },
 
@@ -87,8 +88,8 @@ export const servicesService = {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to update service' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error updating service' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error updating service') };
     }
   },
 
@@ -99,8 +100,8 @@ export const servicesService = {
         return {};
       }
       return { error: response.message || 'Failed to delete service' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error deleting service' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error deleting service') };
     }
   },
 };

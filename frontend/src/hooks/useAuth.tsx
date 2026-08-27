@@ -1,9 +1,8 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { authService } from '@/services/auth.service';
 import { getAuthToken, getRefreshToken, clearAuthTokens } from '@/lib/api';
-import type { UserRole, AuthContextType, LoginCredentials, RegisterData, Profile, User } from '@/types';
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from '@/hooks/auth-context';
+import type { UserRole, LoginCredentials, RegisterData, Profile, User } from '@/types';
 
 const permissionsByRole: Record<UserRole, string[]> = {
   super_admin: ['*'],
@@ -83,10 +82,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
-  return context;
 }

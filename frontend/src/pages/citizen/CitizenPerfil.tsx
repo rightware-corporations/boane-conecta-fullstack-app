@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CitizenLayout } from '@/components/citizen/CitizenLayout';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { citizenService } from '@/services/citizen.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

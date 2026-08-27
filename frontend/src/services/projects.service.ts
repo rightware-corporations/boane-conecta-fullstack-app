@@ -1,8 +1,9 @@
-import { api } from '@/lib/api';
-import type { 
-  Project, 
-  ApiResponse, 
-  PaginatedResponse 
+import { api, getErrorMessage } from '@/lib/api';
+import type {
+  Project,
+  ApiResponse,
+  PaginatedResponse,
+  Pagination,
 } from '@/types';
 
 export const projectsService = {
@@ -20,13 +21,13 @@ export const projectsService = {
 
       const url = `/projects${queryParams.toString() ? `?${queryParams}` : ''}`;
       const response = await api.get<ApiResponse<Project[]>>(url);
-      
+
       if (response.success) {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to fetch projects' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching projects' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching projects') };
     }
   },
 
@@ -37,8 +38,8 @@ export const projectsService = {
         return { data: response.data };
       }
       return { error: response.message || 'Project not found' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching project' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching project') };
     }
   },
 
@@ -49,7 +50,7 @@ export const projectsService = {
     category?: string;
     status?: string;
     search?: string;
-  }): Promise<{ data?: Project[]; pagination?: any; error?: string }> {
+  }): Promise<{ data?: Project[]; pagination?: Pagination; error?: string }> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.page) queryParams.append('page', params.page.toString());
@@ -60,13 +61,13 @@ export const projectsService = {
 
       const url = `/admin/projects${queryParams.toString() ? `?${queryParams}` : ''}`;
       const response = await api.get<PaginatedResponse<Project>>(url);
-      
+
       if (response.success) {
         return { data: response.data, pagination: response.pagination };
       }
       return { error: 'Failed to fetch projects' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching projects' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching projects') };
     }
   },
 
@@ -77,8 +78,8 @@ export const projectsService = {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to create project' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error creating project' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error creating project') };
     }
   },
 
@@ -89,8 +90,8 @@ export const projectsService = {
         return { data: response.data };
       }
       return { error: response.message || 'Failed to update project' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error updating project' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error updating project') };
     }
   },
 
@@ -101,8 +102,8 @@ export const projectsService = {
         return {};
       }
       return { error: response.message || 'Failed to delete project' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error deleting project' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error deleting project') };
     }
   },
 };

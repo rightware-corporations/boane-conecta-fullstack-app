@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Calendar, Loader2, Search, Tag } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { publicService } from '@/services/public.service';
+import { newsService } from '@/services/news.service';
 import { cn } from '@/lib/utils';
 
 const categories = ['Todas', 'Educação', 'Saúde', 'Infraestrutura', 'Ambiente', 'Eventos', 'Serviços'];
@@ -15,7 +15,7 @@ export default function Noticias() {
   const { data: newsItems = [], isLoading } = useQuery({
     queryKey: ['public-news'],
     queryFn: async () => {
-      const result = await publicService.getNews();
+      const result = await newsService.getPublicNews();
       if (result.error) throw new Error(result.error);
       return result.data || [];
     },

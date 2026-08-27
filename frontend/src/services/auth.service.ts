@@ -1,4 +1,4 @@
-import { api, setAuthToken, setRefreshToken, clearAuthTokens, getRefreshToken } from '@/lib/api';
+import { api, setAuthToken, setRefreshToken, clearAuthTokens, getRefreshToken, getErrorMessage } from '@/lib/api';
 import type {
   AuthSession,
   LoginCredentials,
@@ -94,8 +94,8 @@ export const authService = {
         return { data: session };
       }
       return { error: response.message || 'Login failed' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error during login' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error during login') };
     }
   },
 
@@ -109,8 +109,8 @@ export const authService = {
       });
       if (response.success) return {};
       return { error: response.message || 'Registration failed' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error during registration' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error during registration') };
     }
   },
 
@@ -139,9 +139,9 @@ export const authService = {
         return { data: session };
       }
       return { error: response.message || 'Token refresh failed' };
-    } catch (error: any) {
+    } catch (error) {
       clearAuthTokens();
-      return { error: error.message || 'Network error during token refresh' };
+      return { error: getErrorMessage(error, 'Network error during token refresh') };
     }
   },
 
@@ -152,8 +152,8 @@ export const authService = {
         return { data: { user: mapUser(response.data), profile: mapProfile(response.data) } };
       }
       return { error: response.message || 'Failed to fetch user data' };
-    } catch (error: any) {
-      return { error: error.message || 'Network error fetching user data' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Network error fetching user data') };
     }
   },
 };
