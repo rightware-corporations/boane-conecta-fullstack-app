@@ -12,6 +12,7 @@ import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
 const Index = lazy(() => import("./pages/Index"));
 const Sobre = lazy(() => import("./pages/Sobre"));
 const Servicos = lazy(() => import("./pages/Servicos"));
+const ServicoDetalhe = lazy(() => import("./pages/ServicoDetalhe"));
 const Contactos = lazy(() => import("./pages/Contactos"));
 const Noticias = lazy(() => import("./pages/Noticias"));
 const Reclamacoes = lazy(() => import("./pages/Reclamacoes"));
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="/" element={<Index />} />
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/servicos" element={<Servicos />} />
+        <Route path="/servicos/:slug" element={<ServicoDetalhe />} />
         <Route path="/contactos" element={<Contactos />} />
         <Route path="/noticias" element={<Noticias />} />
         <Route path="/reclamacoes" element={<Reclamacoes />} />
