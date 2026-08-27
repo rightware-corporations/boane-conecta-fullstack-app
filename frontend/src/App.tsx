@@ -2,56 +2,55 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
-import Index from "./pages/Index";
-import Sobre from "./pages/Sobre";
-import Servicos from "./pages/Servicos";
-import Contactos from "./pages/Contactos";
-import Noticias from "./pages/Noticias";
-import Reclamacoes from "./pages/Reclamacoes";
-import FAQ from "./pages/FAQ";
-import Pelouros from "./pages/Pelouros";
-import Distritos from "./pages/Distritos";
-import PlanoDesenvolvimento from "./pages/PlanoDesenvolvimento";
-import Projetos from "./pages/Projetos";
-import Tributos from "./pages/Tributos";
-import NoticiaDetalhe from "./pages/NoticiaDetalhe";
-import Galeria from "./pages/Galeria";
-import Concursos from "./pages/Concursos";
-import Doacoes from "./pages/Doacoes";
-import Documentos from "./pages/Documentos";
-import Avisos from "./pages/Avisos";
-import ConsultarPedido from "./pages/ConsultarPedido";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/admin/Dashboard";
-import AdminNoticias from "./pages/admin/AdminNoticias";
-import AdminServicos from "./pages/admin/AdminServicos";
-import AdminProjectos from "./pages/admin/AdminProjectos";
-import AdminUtilizadores from "./pages/admin/AdminUtilizadores";
-import AdminPedidos from "./pages/admin/AdminPedidos";
-import CitizenDashboard from "./pages/citizen/CitizenDashboard";
-import CitizenPerfil from "./pages/citizen/CitizenPerfil";
-import CitizenPedidos from "./pages/citizen/CitizenPedidos";
-import CitizenDocumentos from "./pages/citizen/CitizenDocumentos";
-import CitizenLicencas from "./pages/citizen/CitizenLicencas";
-import CitizenPagamentos from "./pages/citizen/CitizenPagamentos";
-import CitizenAgendamentos from "./pages/citizen/CitizenAgendamentos";
-import CitizenNotificacoes from "./pages/citizen/CitizenNotificacoes";
-import NotFound from "./pages/NotFound";
+
+const Index = lazy(() => import("./pages/Index"));
+const Sobre = lazy(() => import("./pages/Sobre"));
+const Servicos = lazy(() => import("./pages/Servicos"));
+const Contactos = lazy(() => import("./pages/Contactos"));
+const Noticias = lazy(() => import("./pages/Noticias"));
+const Reclamacoes = lazy(() => import("./pages/Reclamacoes"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Pelouros = lazy(() => import("./pages/Pelouros"));
+const Distritos = lazy(() => import("./pages/Distritos"));
+const PlanoDesenvolvimento = lazy(() => import("./pages/PlanoDesenvolvimento"));
+const Projetos = lazy(() => import("./pages/Projetos"));
+const Tributos = lazy(() => import("./pages/Tributos"));
+const NoticiaDetalhe = lazy(() => import("./pages/NoticiaDetalhe"));
+const Galeria = lazy(() => import("./pages/Galeria"));
+const Concursos = lazy(() => import("./pages/Concursos"));
+const Doacoes = lazy(() => import("./pages/Doacoes"));
+const Documentos = lazy(() => import("./pages/Documentos"));
+const Avisos = lazy(() => import("./pages/Avisos"));
+const ConsultarPedido = lazy(() => import("./pages/ConsultarPedido"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdminNoticias = lazy(() => import("./pages/admin/AdminNoticias"));
+const AdminServicos = lazy(() => import("./pages/admin/AdminServicos"));
+const AdminProjectos = lazy(() => import("./pages/admin/AdminProjectos"));
+const AdminUtilizadores = lazy(() => import("./pages/admin/AdminUtilizadores"));
+const AdminPedidos = lazy(() => import("./pages/admin/AdminPedidos"));
+const CitizenDashboard = lazy(() => import("./pages/citizen/CitizenDashboard"));
+const CitizenPerfil = lazy(() => import("./pages/citizen/CitizenPerfil"));
+const CitizenPedidos = lazy(() => import("./pages/citizen/CitizenPedidos"));
+const CitizenDocumentos = lazy(() => import("./pages/citizen/CitizenDocumentos"));
+const CitizenLicencas = lazy(() => import("./pages/citizen/CitizenLicencas"));
+const CitizenPagamentos = lazy(() => import("./pages/citizen/CitizenPagamentos"));
+const CitizenAgendamentos = lazy(() => import("./pages/citizen/CitizenAgendamentos"));
+const CitizenNotificacoes = lazy(() => import("./pages/citizen/CitizenNotificacoes"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
-function AnimatedRoutes() {
-  const location = useLocation();
-
+function AppRoutes() {
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+    <Suspense fallback={<RouteLoading />}>
+      <Routes>
         {/* Public routes */}
         <Route path="/" element={<Index />} />
         <Route path="/sobre" element={<Sobre />} />
@@ -74,162 +73,170 @@ function AnimatedRoutes() {
         <Route path="/avisos" element={<Avisos />} />
 
         {/* Auth route - only accessible when not logged in */}
-        <Route 
-          path="/auth" 
+        <Route
+          path="/auth"
           element={
             <PublicOnlyRoute>
               <Auth />
             </PublicOnlyRoute>
-          } 
+          }
         />
 
         {/* Protected admin routes */}
-        <Route 
-          path="/admin" 
+        <Route
+          path="/admin"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['super_admin', 'admin', 'editor', 'funcionario', 'gestor']}>
                 <Dashboard />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/noticias" 
+        <Route
+          path="/admin/noticias"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['super_admin', 'admin', 'editor']}>
                 <AdminNoticias />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/servicos" 
+        <Route
+          path="/admin/servicos"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario']}>
                 <AdminServicos />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/projectos" 
+        <Route
+          path="/admin/projectos"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['super_admin', 'admin', 'gestor']}>
                 <AdminProjectos />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/utilizadores" 
+        <Route
+          path="/admin/utilizadores"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['super_admin', 'admin']}>
                 <AdminUtilizadores />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/pedidos" 
+        <Route
+          path="/admin/pedidos"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario']}>
                 <AdminPedidos />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
 
         {/* Citizen area routes */}
-        <Route 
-          path="/municipe" 
+        <Route
+          path="/municipe"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
                 <CitizenDashboard />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/municipe/perfil" 
+        <Route
+          path="/municipe/perfil"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
                 <CitizenPerfil />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/municipe/pedidos" 
+        <Route
+          path="/municipe/pedidos"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
                 <CitizenPedidos />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/municipe/documentos" 
+        <Route
+          path="/municipe/documentos"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
                 <CitizenDocumentos />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/municipe/licencas" 
+        <Route
+          path="/municipe/licencas"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
                 <CitizenLicencas />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/municipe/pagamentos" 
+        <Route
+          path="/municipe/pagamentos"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
                 <CitizenPagamentos />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/municipe/agendamentos" 
+        <Route
+          path="/municipe/agendamentos"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
                 <CitizenAgendamentos />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/municipe/notificacoes" 
+        <Route
+          path="/municipe/notificacoes"
           element={
             <ProtectedRoute>
               <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
                 <CitizenNotificacoes />
               </RoleGuard>
             </ProtectedRoute>
-          } 
+          }
         />
         {/* Catch all - 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </AnimatePresence>
+    </Suspense>
+  );
+}
+
+function RouteLoading() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center px-4" role="status">
+      <p className="text-sm font-medium text-muted-foreground">A carregar página…</p>
+    </div>
   );
 }
 
@@ -240,7 +247,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AnimatedRoutes />
+          <AppRoutes />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
