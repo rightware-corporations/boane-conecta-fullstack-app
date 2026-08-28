@@ -47,6 +47,7 @@ const CitizenPagamentos = lazy(() => import("./pages/citizen/CitizenPagamentos")
 const CitizenAgendamentos = lazy(() => import("./pages/citizen/CitizenAgendamentos"));
 const CitizenNotificacoes = lazy(() => import("./pages/citizen/CitizenNotificacoes"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const PublicQueueDisplay = lazy(() => import("./features/queue-display/PublicQueueDisplay"));
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ function AppRoutes() {
         <Route path="/servicos/pedidos" element={<ConsultarPedido />} />
         <Route path="/documentos" element={<Documentos />} />
         <Route path="/avisos" element={<Avisos />} />
+        <Route path="/filas/:queueId/display" element={<PublicQueueDisplay />} />
 
         {/* Auth route - only accessible when not logged in */}
         <Route
