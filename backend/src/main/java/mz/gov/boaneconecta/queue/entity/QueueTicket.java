@@ -7,7 +7,7 @@ import mz.gov.boaneconecta.departments.entity.Department;
 import mz.gov.boaneconecta.users.entity.User;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -28,10 +28,10 @@ public class QueueTicket {
     @Enumerated(EnumType.STRING) @Builder.Default @Column(name = "priority_class", nullable = false, length = 30) private QueuePriorityClass priorityClass = QueuePriorityClass.NORMAL;
     @Column(name = "priority_reason", length = 500) private String priorityReason;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "called_desk_id") private QueueDesk calledDesk;
-    @Column(name = "called_at") private LocalDateTime calledAt;
-    @Column(name = "service_started_at") private LocalDateTime serviceStartedAt;
-    @Column(name = "completed_at") private LocalDateTime completedAt;
+    @Column(name = "called_at") private Instant calledAt;
+    @Column(name = "service_started_at") private Instant serviceStartedAt;
+    @Column(name = "completed_at") private Instant completedAt;
     @Version private Long version;
-    @CreationTimestamp @Column(name = "created_at", nullable = false, updatable = false) private LocalDateTime createdAt;
-    @UpdateTimestamp @Column(name = "updated_at", nullable = false) private LocalDateTime updatedAt;
+    @CreationTimestamp @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
+    @UpdateTimestamp @Column(name = "updated_at", nullable = false) private Instant updatedAt;
 }
