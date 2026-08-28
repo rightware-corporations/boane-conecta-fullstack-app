@@ -69,6 +69,18 @@ export async function cancelAppointment(appointment: Appointment, reason: string
   return dataOf(response, 'Não foi possível cancelar o agendamento.');
 }
 
+export async function rescheduleAppointment(
+  appointment: Appointment,
+  hold: AppointmentHold,
+): Promise<AppointmentConfirmation> {
+  const response = await api.post<ApiResponse<AppointmentConfirmation>>(
+    `/citizen/appointments/${encodeURIComponent(appointment.id)}/reschedule`,
+    { holdId: hold.holdId, holdVersion: hold.version },
+    { headers: { 'Idempotency-Key': idempotencyKey(), 'If-Match': String(appointment.version) } },
+  );
+  return dataOf(response, 'Não foi possível reagendar o atendimento.');
+}
+
 export async function checkIn(input: {
   appointmentId: string;
   method: 'QR' | 'MANUAL_CODE';
