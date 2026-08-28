@@ -38,18 +38,33 @@ class AppointmentsIntegrationTest {
         String adminToken = login("admin@boane.gov.mz", "ChangeMe123!").path("data").path("accessToken").asText();
         AppointmentSlot slot = createFutureSlot();
 
-        JsonNode created = objectMapper.readTree(mockMvc.perform(post("/api/v1/citizen/appointments")
+        JsonNode held = objectMapper.readTree(mockMvc.perform(post("/api/v1/citizen/appointment-holds")
                         .header("Authorization", "Bearer " + citizenToken)
+                        .header("Idempotency-Key", "hold-" + UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"slotId":"%s","reason":"Attendance"}
+                                {"slotId":"%s"}
                                 """.formatted(slot.getId())))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.appointmentNumber").isNotEmpty())
-                .andExpect(jsonPath("$.data.status").value("SCHEDULED"))
-                .andExpect(jsonPath("$.data.slotStatus").value("FULL"))
                 .andReturn().getResponse().getContentAsString());
-        String appointmentId = created.path("data").path("id").asText();
+        String holdId = held.path("data").path("holdId").asText();
+        long holdVersion = held.path("data").path("version").asLong();
+
+        JsonNode confirmed = objectMapper.readTree(mockMvc.perform(post(
+                        "/api/v1/citizen/appointment-holds/{holdId}/confirm", holdId)
+                        .header("Authorization", "Bearer " + citizenToken)
+                        .header("Idempotency-Key", "confirm-" + UUID.randomUUID())
+                        .header("If-Match", "\"" + holdVersion + "\"")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"reason":"Attendance"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.reference").isNotEmpty())
+                .andExpect(jsonPath("$.data.status").value("CONFIRMED"))
+                .andExpect(jsonPath("$.data.availableActions[0]").value("CANCEL"))
+                .andReturn().getResponse().getContentAsString());
+        String appointmentId = confirmed.path("data").path("appointmentId").asText();
 
         mockMvc.perform(get("/api/v1/citizen/appointments")
                         .header("Authorization", "Bearer " + citizenToken))
