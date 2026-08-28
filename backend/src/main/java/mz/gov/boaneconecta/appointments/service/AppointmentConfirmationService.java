@@ -65,16 +65,17 @@ public class AppointmentConfirmationService {
         if (appointments.countBySlotAndStatusIn(slot, CAPACITY_STATES) >= slot.getCapacity())
             throw new ResourceConflictException("APPOINTMENT_SLOT_CAPACITY_REACHED");
 
+        String checkInCredential = randomToken();
         Appointment appointment = appointments.saveAndFlush(Appointment.builder()
                 .appointmentNumber(generateReference()).citizenUser(citizen).slot(slot)
                 .reason(cleanToNull(reason)).status(AppointmentStatus.CONFIRMED).confirmedAt(now)
-                .checkInCodeHash(hash(randomToken())).build());
+                .checkInCodeHash(hash(checkInCredential)).checkInCodeExpiresAt(slot.getEndTime()).build());
         hold.setStatus(AppointmentHoldStatus.CONSUMED);
         hold.setConsumedAt(now);
         holds.save(hold);
         claim.complete(appointment.getId(), appointment.getAppointmentNumber(), now);
         idempotency.save(claim);
-        return response(appointment, false);
+        return response(appointment, false, checkInCredential);
     }
 
     private AppointmentConfirmationResponse replay(IdempotencyRecord record, String fingerprint, User citizen) {
@@ -83,12 +84,12 @@ public class AppointmentConfirmationService {
         if (record.getState() != IdempotencyState.COMPLETED) throw new ResourceConflictException("APPOINTMENT_CONFIRMATION_IN_PROGRESS");
         Appointment appointment = appointments.findByIdAndCitizenUser(record.getResponseResourceId(), citizen)
                 .orElseThrow(() -> new IllegalStateException("Idempotent appointment response is missing"));
-        return response(appointment, true);
+        return response(appointment, true, null);
     }
 
-    private AppointmentConfirmationResponse response(Appointment appointment, boolean replayed) {
+    private AppointmentConfirmationResponse response(Appointment appointment, boolean replayed, String credential) {
         return new AppointmentConfirmationResponse(appointment.getId(), appointment.getAppointmentNumber(),
-                appointment.getStatus(), appointment.getSlot().getStartTime(), List.of("CANCEL", "RESCHEDULE"), replayed);
+                appointment.getStatus(), appointment.getSlot().getStartTime(), List.of("CANCEL", "RESCHEDULE"), replayed, credential);
     }
     private String generateReference() {
         String prefix = "APT-" + LocalDate.now(clock).format(DateTimeFormatter.BASIC_ISO_DATE) + "-";
