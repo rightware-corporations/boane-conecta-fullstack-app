@@ -5,9 +5,14 @@ import mz.gov.boaneconecta.core.exception.ResourceNotFoundException;
 import mz.gov.boaneconecta.documents.dto.DocumentResponse;
 import mz.gov.boaneconecta.documents.dto.UpdateDocumentStatusRequest;
 import mz.gov.boaneconecta.documents.entity.Document;
+import mz.gov.boaneconecta.documents.entity.DocumentClassification;
 import mz.gov.boaneconecta.documents.entity.DocumentStatus;
+import mz.gov.boaneconecta.documents.entity.DocumentVersion;
 import mz.gov.boaneconecta.documents.entity.Visibility;
 import mz.gov.boaneconecta.documents.repository.DocumentRepository;
+import mz.gov.boaneconecta.documents.repository.DocumentVersionRepository;
+import mz.gov.boaneconecta.documents.security.FileSignatureDetector;
+import mz.gov.boaneconecta.documents.storage.ObjectStorage;
 import mz.gov.boaneconecta.requests.entity.CitizenRequest;
 import mz.gov.boaneconecta.requests.entity.RequestDocuments;
 import mz.gov.boaneconecta.requests.repository.CitizenRequestRepository;
@@ -16,6 +21,7 @@ import mz.gov.boaneconecta.users.entity.User;
 import mz.gov.boaneconecta.users.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,12 +32,14 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.HexFormat;
 
 @Service
 public class DocumentService {
@@ -44,22 +52,34 @@ public class DocumentService {
             "text/plain");
 
     private final DocumentRepository documentRepository;
+    private final DocumentVersionRepository documentVersionRepository;
     private final UserRepository userRepository;
     private final CitizenRequestRepository citizenRequestRepository;
     private final RequestDocumentsRepository requestDocumentsRepository;
     private final Path storageRoot;
+    private final ObjectStorage objectStorage;
+    private final FileSignatureDetector signatureDetector;
+    private final String quarantineBucket;
 
     public DocumentService(
             DocumentRepository documentRepository,
+            DocumentVersionRepository documentVersionRepository,
             UserRepository userRepository,
             CitizenRequestRepository citizenRequestRepository,
             RequestDocumentsRepository requestDocumentsRepository,
-            @Value("${app.storage.root}") String storageRoot) {
+            ObjectStorage objectStorage,
+            FileSignatureDetector signatureDetector,
+            @Value("${app.storage.root}") String storageRoot,
+            @Value("${app.storage.quarantine-bucket:boane-quarantine}") String quarantineBucket) {
         this.documentRepository = documentRepository;
+        this.documentVersionRepository = documentVersionRepository;
         this.userRepository = userRepository;
         this.citizenRequestRepository = citizenRequestRepository;
         this.requestDocumentsRepository = requestDocumentsRepository;
         this.storageRoot = Paths.get(storageRoot).toAbsolutePath().normalize();
+        this.objectStorage = objectStorage;
+        this.signatureDetector = signatureDetector;
+        this.quarantineBucket = quarantineBucket;
     }
 
     @Transactional
@@ -70,40 +90,57 @@ public class DocumentService {
         String originalFileName = sanitizeFileName(file.getOriginalFilename());
         String extension = extensionOf(originalFileName);
         String storedFileName = UUID.randomUUID() + extension;
-        Path ownerDirectory = storageRoot.resolve(owner.getId().toString()).normalize();
-        Path target = ownerDirectory.resolve(storedFileName).normalize();
-
-        if (!target.startsWith(storageRoot)) {
-            throw new IllegalArgumentException("Invalid storage path");
-        }
-
+        byte[] content;
         try {
-            Files.createDirectories(ownerDirectory);
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            content = file.getBytes();
         } catch (IOException exception) {
-            throw new IllegalStateException("Could not store document", exception);
+            throw new IllegalStateException("Could not read document", exception);
         }
+        String detectedMimeType = signatureDetector.detect(content);
+        String declaredMimeType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
+        if (!detectedMimeType.equals(declaredMimeType)) {
+            throw new IllegalArgumentException("Document content does not match its declared type");
+        }
+        String objectKey = "quarantine/" + owner.getId() + "/" + UUID.randomUUID() + extension;
+        objectStorage.put(quarantineBucket, objectKey, content, detectedMimeType);
 
-        Document document = Document.builder()
+        Document document = documentRepository.saveAndFlush(Document.builder()
                 .ownerUser(owner)
                 .title(cleanTitle(title, originalFileName))
                 .documentType(clean(documentType))
                 .fileName(storedFileName)
                 .originalFileName(originalFileName)
-                .filePath(target.toString())
-                .mimeType(file.getContentType())
+                .storageBucket(quarantineBucket)
+                .storageKey(objectKey)
+                .mimeType(declaredMimeType)
+                .detectedMimeType(detectedMimeType)
                 .fileSize(file.getSize())
+                .sha256(sha256(content))
                 .visibility(Visibility.PRIVATE)
-                .status(DocumentStatus.ACTIVE)
-                .build();
+                .classification(DocumentClassification.PERSONAL)
+                .currentVersionNumber(1)
+                .status(DocumentStatus.RECEIVED)
+                .build());
 
-        return toResponse(documentRepository.saveAndFlush(document));
+        documentVersionRepository.saveAndFlush(DocumentVersion.builder()
+                .document(document)
+                .versionNumber(1)
+                .storageBucket(quarantineBucket)
+                .storageKey(objectKey)
+                .originalFileName(originalFileName)
+                .detectedMimeType(detectedMimeType)
+                .fileSize(file.getSize())
+                .sha256(document.getSha256())
+                .status(DocumentStatus.RECEIVED)
+                .build());
+
+        return toResponse(document);
     }
 
     @Transactional(readOnly = true)
     public List<DocumentResponse> listCitizenDocuments(UUID ownerUserId) {
         User owner = requireUser(ownerUserId);
-        return documentRepository.findByOwnerUserAndStatusOrderByCreatedAtDesc(owner, DocumentStatus.ACTIVE).stream()
+        return documentRepository.findByOwnerUserAndStatusNotOrderByCreatedAtDesc(owner, DocumentStatus.ARCHIVED).stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -157,8 +194,8 @@ public class DocumentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Citizen request not found"));
         Document document = documentRepository.findByIdAndOwnerUser(documentId, citizen)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
-        if (document.getStatus() != DocumentStatus.ACTIVE) {
-            throw new IllegalArgumentException("Only active documents can be attached to requests");
+        if (document.getStatus() != DocumentStatus.VALID) {
+            throw new IllegalArgumentException("Only validated documents can be attached to requests");
         }
         if (requestDocumentsRepository.existsByRequestAndDocument(request, document)) {
             throw new ResourceConflictException("Document is already attached to this request");
@@ -186,7 +223,7 @@ public class DocumentService {
     private Document requireCitizenDocument(UUID ownerUserId, UUID documentId) {
         User owner = requireUser(ownerUserId);
         return documentRepository.findByIdAndOwnerUser(documentId, owner)
-                .filter(document -> document.getStatus() == DocumentStatus.ACTIVE)
+                .filter(document -> document.getStatus() != DocumentStatus.ARCHIVED)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
     }
 
@@ -201,6 +238,17 @@ public class DocumentService {
     }
 
     private StoredDocument toStoredDocument(Document document) {
+        if (document.getStatus() != DocumentStatus.VALID) {
+            throw new ResourceConflictException("Document is not available for download");
+        }
+        if (document.getStorageBucket() != null && document.getStorageKey() != null) {
+            ObjectStorage.StoredObject stored = objectStorage.get(document.getStorageBucket(), document.getStorageKey());
+            Resource resource = new ByteArrayResource(stored.content());
+            return new StoredDocument(
+                    resource,
+                    document.getOriginalFileName() == null ? document.getFileName() : document.getOriginalFileName(),
+                    document.getDetectedMimeType() == null ? "application/octet-stream" : document.getDetectedMimeType());
+        }
         Path path = Paths.get(document.getFilePath()).toAbsolutePath().normalize();
         if (!path.startsWith(storageRoot)) {
             throw new IllegalArgumentException("Invalid document path");
@@ -275,6 +323,14 @@ public class DocumentService {
             return "";
         }
         return fileName.substring(index).toLowerCase(Locale.ROOT);
+    }
+
+    private String sha256(byte[] content) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is not available", exception);
+        }
     }
 
     public record StoredDocument(Resource resource, String fileName, String mimeType) {
