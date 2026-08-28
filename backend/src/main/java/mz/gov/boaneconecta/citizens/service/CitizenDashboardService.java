@@ -31,12 +31,13 @@ public class CitizenDashboardService {
     private final PaymentRepository payments;
     private final AppointmentRepository appointments;
     private final NotificationRepository notifications;
+    private final Clock clock;
 
     public CitizenDashboardService(UserRepository users, CitizenRequestRepository requests,
             RequestDraftRepository drafts, PaymentRepository payments,
-            AppointmentRepository appointments, NotificationRepository notifications) {
+            AppointmentRepository appointments, NotificationRepository notifications, Clock clock) {
         this.users = users; this.requests = requests; this.drafts = drafts; this.payments = payments;
-        this.appointments = appointments; this.notifications = notifications;
+        this.appointments = appointments; this.notifications = notifications; this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -50,7 +51,7 @@ public class CitizenDashboardService {
                 .filter(payment -> payment.getStatus() == PaymentStatus.PENDING).limit(3).toList();
         Appointment nextAppointment = appointments.findByCitizenUserOrderByCreatedAtDesc(user).stream()
                 .filter(item -> item.getStatus() == AppointmentStatus.SCHEDULED || item.getStatus() == AppointmentStatus.CONFIRMED)
-                .filter(item -> item.getSlot() != null && !item.getSlot().getStartTime().isBefore(LocalDateTime.now()))
+                .filter(item -> item.getSlot() != null && !item.getSlot().getStartTime().isBefore(clock.instant()))
                 .min(Comparator.comparing(item -> item.getSlot().getStartTime())).orElse(null);
         List<Notification> recentNotifications = notifications.findByUserOrderByCreatedAtDesc(user).stream().limit(5).toList();
 
