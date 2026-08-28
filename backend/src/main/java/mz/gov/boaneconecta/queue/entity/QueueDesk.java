@@ -3,7 +3,8 @@ package mz.gov.boaneconecta.queue.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import mz.gov.boaneconecta.users.entity.User;
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 import java.util.UUID;
 
