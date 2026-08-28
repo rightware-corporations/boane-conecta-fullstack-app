@@ -9,6 +9,7 @@ import mz.gov.boaneconecta.users.entity.User;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
@@ -34,6 +35,19 @@ public class Notification {
 
     @Column(length = 50)
     private String type;
+
+    @Builder.Default
+    @Column(nullable = false, length = 50)
+    private String category = "GENERAL";
+
+    @Column(name = "related_id")
+    private UUID relatedId;
+
+    @Column(name = "action_href", length = 300)
+    private String actionHref;
+
+    @Column(name = "expires_at")
+    private Instant expiresAt;
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
