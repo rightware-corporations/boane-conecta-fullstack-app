@@ -23,6 +23,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select appointment from Appointment appointment join fetch appointment.slot where appointment.id = :id and appointment.citizenUser = :citizen")
     Optional<Appointment> findOwnedByIdForUpdate(@Param("id") UUID id, @Param("citizen") User citizen);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select appointment from Appointment appointment join fetch appointment.slot where appointment.id = :id")
+    Optional<Appointment> findByIdForUpdate(@Param("id") UUID id);
     List<Appointment> findAllByOrderByCreatedAtDesc();
     List<Appointment> findByStatusOrderByCreatedAtDesc(AppointmentStatus status);
     boolean existsByAppointmentNumber(String appointmentNumber);
