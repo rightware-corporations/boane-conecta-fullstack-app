@@ -1,142 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Search, ArrowRight, FileSearch } from 'lucide-react';
 import { CitizenLayout } from '@/components/citizen/CitizenLayout';
 import { citizenService } from '@/services/citizen.service';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Filter, Eye, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import type { ServiceRequest } from '@/types';
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
-  submitted: { label: 'Submetido', variant: 'secondary', icon: Clock },
-  processing: { label: 'Em Processamento', variant: 'default', icon: AlertCircle },
-  approved: { label: 'Aprovado', variant: 'default', icon: CheckCircle2 },
-  rejected: { label: 'Rejeitado', variant: 'destructive', icon: XCircle },
-  completed: { label: 'Concluído', variant: 'default', icon: CheckCircle2 },
-  cancelled: { label: 'Cancelado', variant: 'outline', icon: XCircle },
-};
+const statusLabels: Record<string, string> = { DRAFT: 'Rascunho', SUBMITTED: 'Submetido', IN_REVIEW: 'Em análise', ACTION_REQUIRED: 'Ação necessária', APPROVED: 'Aprovado', REJECTED: 'Recusado', COMPLETED: 'Concluído', CANCELLED: 'Cancelado' };
 
 export default function CitizenPedidos() {
+  const [params, setParams] = useSearchParams();
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [selected, setSelected] = useState<ServiceRequest | null>(null);
+  const [error, setError] = useState<string>();
+  const query = params.get('q') ?? '';
+  const status = params.get('status') ?? '';
+  useEffect(() => { citizenService.getRequests().then(result => { setRequests(result.data ?? []); setError(result.error); setLoading(false); }); }, []);
+  const filtered = useMemo(() => requests.filter(request => (!query || `${request.title} ${request.serviceTitle} ${request.requestNumber}`.toLowerCase().includes(query.toLowerCase())) && (!status || request.status === status)), [query, requests, status]);
+  const update = (key: string, value: string) => { const next = new URLSearchParams(params); if (value) next.set(key, value); else next.delete(key); setParams(next, { replace: true }); };
 
-  useEffect(() => {
-    async function fetch() {
-      const { data, error } = await citizenService.getRequests({ status: statusFilter || undefined });
-      if (data) setRequests(data);
-      setLoading(false);
-    }
-    fetch();
-  }, [statusFilter]);
-
-  const filtered = requests.filter(r =>
-    !search || r.service_name.toLowerCase().includes(search.toLowerCase()) || r.reference_number.includes(search)
-  );
-
-  const statusFilters = ['', 'submitted', 'processing', 'approved', 'completed', 'rejected'];
-
-  return (
-    <CitizenLayout title="Meus Pedidos" subtitle="Acompanhe os seus pedidos de serviço">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Pesquisar por nome do serviço ou referência..."
-            className="pl-9"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {statusFilters.map(s => (
-            <Button
-              key={s}
-              variant={statusFilter === s ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => { setStatusFilter(s); setLoading(true); }}
-            >
-              {s ? statusConfig[s]?.label || s : 'Todos'}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* List */}
-      {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">Nenhum pedido encontrado.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map(request => {
-            const config = statusConfig[request.status] || statusConfig.submitted;
-            const StatusIcon = config.icon;
-            return (
-              <Card key={request.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelected(request)}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-semibold text-foreground truncate">{request.service_name}</p>
-                        <Badge variant={config.variant} className="text-[10px] flex-shrink-0">
-                          <StatusIcon className="h-3 w-3 mr-1" />{config.label}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Ref: {request.reference_number}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Submetido em {new Date(request.submitted_at).toLocaleDateString('pt-PT')}
-                      </p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-semibold">{request.total_amount.toLocaleString('pt-PT')} MZN</p>
-                      <Badge variant={request.payment_status === 'paid' ? 'default' : 'secondary'} className="text-[10px] mt-1">
-                        {request.payment_status === 'paid' ? 'Pago' : request.payment_status === 'pending' ? 'Pendente' : request.payment_status}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Detail Dialog */}
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Detalhe do Pedido</DialogTitle>
-          </DialogHeader>
-          {selected && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-muted-foreground">Serviço:</span><p className="font-medium">{selected.service_name}</p></div>
-                <div><span className="text-muted-foreground">Referência:</span><p className="font-medium">{selected.reference_number}</p></div>
-                <div><span className="text-muted-foreground">Estado:</span><Badge variant={statusConfig[selected.status]?.variant}>{statusConfig[selected.status]?.label}</Badge></div>
-                <div><span className="text-muted-foreground">Valor:</span><p className="font-medium">{selected.total_amount.toLocaleString('pt-PT')} MZN</p></div>
-                <div><span className="text-muted-foreground">Pagamento:</span><Badge variant={selected.payment_status === 'paid' ? 'default' : 'secondary'}>{selected.payment_status}</Badge></div>
-                <div><span className="text-muted-foreground">Data:</span><p className="font-medium">{new Date(selected.submitted_at).toLocaleDateString('pt-PT')}</p></div>
-              </div>
-              {selected.notes && (
-                <div><span className="text-sm text-muted-foreground">Notas:</span><p className="text-sm mt-1">{selected.notes}</p></div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </CitizenLayout>
-  );
+  return <CitizenLayout title="Meus pedidos" subtitle="Consulte o estado e o próximo passo de cada pedido">
+    <div className="mb-6 flex flex-col gap-3 border-b border-border pb-5 md:flex-row md:items-end">
+      <label className="flex-1 text-sm font-medium">Pesquisar<span className="relative mt-1 block"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" value={query} onChange={event => update('q', event.target.value)} placeholder="Referência, serviço ou título" /></span></label>
+      <label className="text-sm font-medium">Estado<select className="mt-1 block h-10 rounded-md border border-input bg-background px-3 text-sm" value={status} onChange={event => update('status', event.target.value)}><option value="">Todos</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      <Button asChild><Link to="/servicos">Iniciar novo pedido</Link></Button>
+    </div>
+    {loading ? <div className="space-y-2">{[1,2,3].map(item => <Skeleton key={item} className="h-20" />)}</div>
+      : error ? <div role="alert" className="border-l-4 border-destructive bg-destructive/5 p-4"><p className="font-medium">Não foi possível carregar os pedidos</p><p className="text-sm text-muted-foreground">{error}</p></div>
+      : filtered.length === 0 ? <div className="py-14 text-center"><FileSearch className="mx-auto mb-3 h-8 w-8 text-muted-foreground" /><h2 className="font-semibold">Nenhum pedido encontrado</h2><p className="mt-1 text-sm text-muted-foreground">Ajuste os filtros ou consulte os serviços disponíveis.</p></div>
+      : <div className="divide-y divide-border border-y border-border">{filtered.map(request => <article key={request.id} className="grid gap-3 py-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center"><div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{request.requestNumber}</p><h2 className="mt-1 font-semibold">{request.title || request.serviceTitle}</h2><p className="text-sm text-muted-foreground">{request.serviceTitle}</p></div><div className="md:text-right"><Badge variant={request.status === 'ACTION_REQUIRED' ? 'destructive' : 'secondary'}>{statusLabels[request.status] ?? request.status}</Badge><p className="mt-1 text-xs text-muted-foreground">Atualizado {new Date(request.updatedAt).toLocaleDateString('pt-PT')}</p></div><Button variant="ghost" size="sm" asChild><Link to={`/municipe/pedidos/${request.id}`}>Ver pedido <ArrowRight className="ml-1 h-4 w-4" /></Link></Button></article>)}</div>}
+  </CitizenLayout>;
 }

@@ -1,33 +1,38 @@
-import { Profile } from './auth';
-
-export interface CitizenProfile extends Profile {
-  // Additional citizen-specific fields if needed
-  email_notifications: boolean;
-  sms_notifications: boolean;
-  preferred_contact_method: 'email' | 'sms' | 'both';
+export interface CitizenProfile {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  emailVerified: boolean;
+  nuit: string | null;
+  documentType: string | null;
+  documentNumber: string | null;
+  birthDate: string | null;
+  gender: string | null;
+  address: string | null;
+  districtName: string | null;
 }
 
 export interface ServiceRequest {
   id: string;
-  reference_number: string;
-  service_id: string;
-  service_name: string;
-  citizen_name: string;
-  citizen_email: string | null;
-  citizen_phone: string;
-  citizen_nuit: string | null;
-  status: 'submitted' | 'processing' | 'approved' | 'rejected' | 'completed' | 'cancelled';
-  payment_status: 'pending' | 'paid' | 'failed' | 'not_required';
-  payment_method: string | null;
-  payment_reference: string | null;
-  total_amount: number;
-  notes: string | null;
-  attachments: string[] | null;
-  processed_by: string | null;
-  submitted_at: string;
-  completed_at: string | null;
-  created_at: string;
-  updated_at: string;
+  requestNumber: string;
+  serviceId: string;
+  serviceTitle: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  submittedAt: string;
+  completedAt: string | null;
+  updatedAt: string;
+}
+
+export interface CitizenRequestDetail {
+  id: string; reference: string; serviceId: string; serviceTitle: string; title: string;
+  status: string; statusLabel: string; nextAction: string; submittedAt: string;
+  timeline: Array<{ status: string; label: string; occurredAt: string }>;
+  documents: Array<{ id: string; title: string; documentType: string; status: string }>;
+  availableActions: string[];
 }
 
 export interface License {
@@ -83,45 +88,34 @@ export interface Notification {
   title: string;
   message: string;
   type: 'info' | 'warning' | 'success' | 'error';
-  category: 'service_request' | 'payment' | 'appointment' | 'license' | 'general';
-  related_id: string | null;
+  category: string;
+  relatedId: string | null;
+  actionHref: string | null;
   read: boolean;
-  created_at: string;
+  readAt: string | null;
+  createdAt: string;
 }
 
 export interface CitizenDocument {
   id: string;
-  name: string;
-  type: string;
-  category: string;
-  file_url: string;
-  file_size: number;
-  file_type: string;
-  validation_status: 'pending' | 'valid' | 'invalid' | 'expired';
-  expiry_date: string | null;
-  uploaded_at: string;
-  validated_at: string | null;
-  validated_by: string | null;
+  title: string;
+  documentType: string | null;
+  fileName: string;
+  originalFileName: string;
+  mimeType: string;
+  fileSize: number;
+  status: 'RECEIVED' | 'SCANNING' | 'VALID' | 'REJECTED' | 'EXPIRED' | 'REPLACED' | 'ARCHIVED';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CitizenDashboard {
-  profile: CitizenProfile;
-  stats: {
-    active_licenses: number;
-    pending_requests: number;
-    pending_payments: number;
-    upcoming_appointments: number;
-    unread_notifications: number;
-  };
-  recent_activity: Array<{
-    id: string;
-    type: 'service_request' | 'payment' | 'appointment' | 'license';
-    title: string;
-    description: string;
-    date: string;
-    status?: string;
-  }>;
-  upcoming_appointments: Appointment[];
-  pending_payments: Payment[];
+  profile: { id: string; full_name: string; email: string; phone: string | null };
+  action_required: Array<{ kind: 'PAYMENT' | 'DRAFT'; title: string; description: string; href: string; related_id: string }>;
+  drafts: Array<{ id: string; serviceId: string; serviceTitle: string; currentStep: string | null; version: number; lastSavedAt: string | null; expiresAt: string }>;
+  active_requests: Array<{ id: string; reference: string; serviceTitle: string | null; title: string; status: string; statusLabel: string; nextAction: string; submittedAt: string; updatedAt: string }>;
+  next_appointment: { id: string; reference: string; status: string; startsAt: string; departmentName: string | null } | null;
+  pending_payments: Array<{ id: string; reference: string; amount: number; currency: string; dueDate: string | null; requestId: string | null }>;
   recent_notifications: Notification[];
+  unread_notifications: number;
 }

@@ -1,182 +1,20 @@
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
+import { Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { CitizenLayout } from '@/components/citizen/CitizenLayout';
-import { useAuth } from '@/hooks/use-auth';
 import { citizenService } from '@/services/citizen.service';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
-import { User, Mail, Phone, MapPin, Shield, Edit2, Save, X } from 'lucide-react';
 import type { CitizenProfile } from '@/types';
 
+const empty = { fullName: '', phone: '', nuit: '', documentType: '', documentNumber: '', birthDate: '', gender: '', address: '' };
 export default function CitizenPerfil() {
-  const { profile: authProfile } = useAuth();
-  const [profile, setProfile] = useState<CitizenProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    full_name: '',
-    phone: '',
-    address: '',
-    district: '',
-    neighborhood: '',
-  });
-
-  useEffect(() => {
-    async function fetch() {
-      const { data, error } = await citizenService.getProfile();
-      if (data) {
-        setProfile(data);
-        setForm({
-          full_name: data.full_name || '',
-          phone: data.phone || '',
-          address: data.address || '',
-          district: data.district || '',
-          neighborhood: data.neighborhood || '',
-        });
-      }
-      setLoading(false);
-    }
-    fetch();
-  }, []);
-
-  const handleSave = async () => {
-    setSaving(true);
-    const { data, error } = await citizenService.updateProfile(form);
-    if (error) {
-      toast.error(error);
-    } else if (data) {
-      setProfile(data);
-      setEditing(false);
-      toast.success('Perfil actualizado com sucesso!');
-    }
-    setSaving(false);
-  };
-
-  return (
-    <CitizenLayout title="Meu Perfil" subtitle="Gerir dados pessoais">
-      {loading ? (
-        <div className="space-y-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      ) : (
-        <div className="max-w-2xl space-y-4">
-          {/* Profile Header */}
-          <Card>
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-2xl">
-                {profile?.full_name?.charAt(0) || 'M'}
-              </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold text-foreground">{profile?.full_name || 'Munícipe'}</h2>
-                <p className="text-sm text-muted-foreground">{authProfile?.role === 'municipe' ? 'Munícipe' : authProfile?.role}</p>
-                <Badge variant={profile?.verified ? 'default' : 'secondary'} className="mt-1 text-xs">
-                  {profile?.verified ? 'Verificado' : 'Pendente de verificação'}
-                </Badge>
-              </div>
-              {!editing && (
-                <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-                  <Edit2 className="h-4 w-4 mr-1" /> Editar
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Dados Pessoais</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">
-                    <User className="h-3.5 w-3.5 inline mr-1" /> Nome Completo
-                  </label>
-                  {editing ? (
-                    <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{profile?.full_name || '—'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">
-                    <Mail className="h-3.5 w-3.5 inline mr-1" /> Email
-                  </label>
-                  <p className="text-sm text-muted-foreground">{authProfile?.user_id || '—'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">
-                    <Phone className="h-3.5 w-3.5 inline mr-1" /> Telefone
-                  </label>
-                  {editing ? (
-                    <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{profile?.phone || '—'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">
-                    <Shield className="h-3.5 w-3.5 inline mr-1" /> NUIT
-                  </label>
-                  <p className="text-sm text-muted-foreground">{profile?.nuit || '—'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1 block">BI</label>
-                  <p className="text-sm text-muted-foreground">{profile?.bi || '—'}</p>
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-4">
-                <h3 className="text-sm font-medium text-foreground mb-3">
-                  <MapPin className="h-3.5 w-3.5 inline mr-1" /> Endereço
-                </h3>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Morada</label>
-                    {editing ? (
-                      <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
-                    ) : (
-                      <p className="text-sm text-muted-foreground">{profile?.address || '—'}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Distrito</label>
-                    {editing ? (
-                      <Input value={form.district} onChange={e => setForm(f => ({ ...f, district: e.target.value }))} />
-                    ) : (
-                      <p className="text-sm text-muted-foreground">{profile?.district || '—'}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Bairro</label>
-                    {editing ? (
-                      <Input value={form.neighborhood} onChange={e => setForm(f => ({ ...f, neighborhood: e.target.value }))} />
-                    ) : (
-                      <p className="text-sm text-muted-foreground">{profile?.neighborhood || '—'}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {editing && (
-                <div className="flex gap-2 pt-2">
-                  <Button onClick={handleSave} disabled={saving}>
-                    <Save className="h-4 w-4 mr-1" /> {saving ? 'A guardar...' : 'Guardar'}
-                  </Button>
-                  <Button variant="outline" onClick={() => setEditing(false)}>
-                    <X className="h-4 w-4 mr-1" /> Cancelar
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </CitizenLayout>
-  );
+  const [profile, setProfile] = useState<CitizenProfile>(); const [form, setForm] = useState(empty); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false); const [error, setError] = useState<string>();
+  useEffect(() => { citizenService.getProfile().then(result => { if (result.data) { setProfile(result.data); setForm({ fullName: result.data.fullName, phone: result.data.phone ?? '', nuit: result.data.nuit ?? '', documentType: result.data.documentType ?? '', documentNumber: result.data.documentNumber ?? '', birthDate: result.data.birthDate ?? '', gender: result.data.gender ?? '', address: result.data.address ?? '' }); } setError(result.error); setLoading(false); }); }, []);
+  const field = (name: keyof typeof empty) => (event: React.ChangeEvent<HTMLInputElement>) => setForm(current => ({ ...current, [name]: event.target.value }));
+  const submit = async (event: FormEvent) => { event.preventDefault(); setSaving(true); const result = await citizenService.updateProfile(form); if (result.data) { setProfile(result.data); toast.success('Dados guardados'); } else toast.error(result.error); setSaving(false); };
+  return <CitizenLayout title="Conta" subtitle="Mantenha os seus dados de contacto e identificação atualizados">
+    {loading ? <Skeleton className="h-96 max-w-3xl" /> : error && !profile ? <div role="alert" className="border-l-4 border-destructive p-4">{error}</div> : <form onSubmit={submit} className="max-w-3xl space-y-8"><section><h2 className="font-semibold">Acesso</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-sm font-medium">Email<Input className="mt-1" value={profile?.email ?? ''} disabled /><span className="mt-1 block text-xs font-normal text-muted-foreground">O email de acesso não pode ser alterado aqui.</span></label><label className="text-sm font-medium">Estado do email<Input className="mt-1" value={profile?.emailVerified ? 'Verificado' : 'Por verificar'} disabled /></label></div></section><section className="border-t border-border pt-6"><h2 className="font-semibold">Dados pessoais</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><label className="text-sm font-medium">Nome completo<Input required maxLength={150} className="mt-1" value={form.fullName} onChange={field('fullName')} /></label><label className="text-sm font-medium">Telefone<Input maxLength={50} className="mt-1" value={form.phone} onChange={field('phone')} /></label><label className="text-sm font-medium">NUIT<Input maxLength={50} className="mt-1" value={form.nuit} onChange={field('nuit')} /></label><label className="text-sm font-medium">Tipo de documento<Input maxLength={50} className="mt-1" value={form.documentType} onChange={field('documentType')} /></label><label className="text-sm font-medium">Número do documento<Input maxLength={80} className="mt-1" value={form.documentNumber} onChange={field('documentNumber')} /></label><label className="text-sm font-medium">Data de nascimento<Input type="date" className="mt-1" value={form.birthDate} onChange={field('birthDate')} /></label><label className="text-sm font-medium">Género<Input maxLength={30} className="mt-1" value={form.gender} onChange={field('gender')} /></label><label className="text-sm font-medium sm:col-span-2">Morada<Input maxLength={1000} className="mt-1" value={form.address} onChange={field('address')} /></label></div></section><Button disabled={saving}><Save className="mr-2 h-4 w-4" />{saving ? 'A guardar…' : 'Guardar alterações'}</Button></form>}
+  </CitizenLayout>;
 }

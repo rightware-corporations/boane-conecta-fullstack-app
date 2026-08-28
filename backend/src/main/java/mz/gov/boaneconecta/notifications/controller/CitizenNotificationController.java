@@ -2,7 +2,7 @@ package mz.gov.boaneconecta.notifications.controller;
 
 import mz.gov.boaneconecta.core.response.ApiResponse;
 import mz.gov.boaneconecta.core.security.UserDetailsImpl;
-import mz.gov.boaneconecta.notifications.dto.NotificationResponse;
+import mz.gov.boaneconecta.notifications.dto.CitizenNotificationResponse;
 import mz.gov.boaneconecta.notifications.dto.UnreadCountResponse;
 import mz.gov.boaneconecta.notifications.service.NotificationService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,7 +25,7 @@ public class CitizenNotificationController {
     }
 
     @GetMapping
-    public ApiResponse<List<NotificationResponse>> list(@AuthenticationPrincipal UserDetailsImpl principal) {
+    public ApiResponse<List<CitizenNotificationResponse>> list(@AuthenticationPrincipal UserDetailsImpl principal) {
         return ApiResponse.success("Notifications retrieved", notificationService.listCitizen(principal.getId()));
     }
 
@@ -35,12 +35,12 @@ public class CitizenNotificationController {
     }
 
     @PatchMapping("/{id}/read")
-    public ApiResponse<NotificationResponse> markRead(@AuthenticationPrincipal UserDetailsImpl principal, @PathVariable UUID id) {
+    public ApiResponse<CitizenNotificationResponse> markRead(@AuthenticationPrincipal UserDetailsImpl principal, @PathVariable UUID id) {
         return ApiResponse.success("Notification marked as read", notificationService.markRead(principal.getId(), id));
     }
 
     @PatchMapping("/read-all")
-    public ApiResponse<List<NotificationResponse>> markAllRead(@AuthenticationPrincipal UserDetailsImpl principal) {
+    public ApiResponse<List<CitizenNotificationResponse>> markAllRead(@AuthenticationPrincipal UserDetailsImpl principal) {
         return ApiResponse.success("Notifications marked as read", notificationService.markAllRead(principal.getId()));
     }
 }

@@ -3,6 +3,7 @@ package mz.gov.boaneconecta.notifications.service;
 import mz.gov.boaneconecta.core.exception.ResourceNotFoundException;
 import mz.gov.boaneconecta.notifications.dto.CreateNotificationRequest;
 import mz.gov.boaneconecta.notifications.dto.NotificationResponse;
+import mz.gov.boaneconecta.notifications.dto.CitizenNotificationResponse;
 import mz.gov.boaneconecta.notifications.entity.Notification;
 import mz.gov.boaneconecta.notifications.repository.NotificationRepository;
 import mz.gov.boaneconecta.users.entity.User;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,9 +39,11 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public List<NotificationResponse> listCitizen(UUID userId) {
+    public List<CitizenNotificationResponse> listCitizen(UUID userId) {
         User user = requireUser(userId);
-        return notificationRepository.findByUserOrderByCreatedAtDesc(user).stream().map(this::toResponse).toList();
+        return notificationRepository
+                .findByUserAndExpiresAtIsNullOrUserAndExpiresAtAfterOrderByCreatedAtDesc(user, user, Instant.now())
+                .stream().map(this::toCitizenResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -48,18 +52,18 @@ public class NotificationService {
     }
 
     @Transactional
-    public NotificationResponse markRead(UUID userId, UUID notificationId) {
+    public CitizenNotificationResponse markRead(UUID userId, UUID notificationId) {
         User user = requireUser(userId);
         Notification notification = notificationRepository.findByIdAndUser(notificationId, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
         if (notification.getReadAt() == null) {
             notification.setReadAt(LocalDateTime.now());
         }
-        return toResponse(notificationRepository.saveAndFlush(notification));
+        return toCitizenResponse(notificationRepository.saveAndFlush(notification));
     }
 
     @Transactional
-    public List<NotificationResponse> markAllRead(UUID userId) {
+    public List<CitizenNotificationResponse> markAllRead(UUID userId) {
         User user = requireUser(userId);
         LocalDateTime now = LocalDateTime.now();
         List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDesc(user);
@@ -68,7 +72,7 @@ public class NotificationService {
                 notification.setReadAt(now);
             }
         }
-        return notificationRepository.saveAllAndFlush(notifications).stream().map(this::toResponse).toList();
+        return notificationRepository.saveAllAndFlush(notifications).stream().map(this::toCitizenResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -86,6 +90,12 @@ public class NotificationService {
     private NotificationResponse toResponse(Notification notification) {
         User user = notification.getUser();
         return new NotificationResponse(notification.getId(), user == null ? null : user.getId(), user == null ? null : user.getFullName(), notification.getTitle(), notification.getMessage(), notification.getType(), notification.getReadAt() != null, notification.getReadAt(), notification.getCreatedAt());
+    }
+
+    private CitizenNotificationResponse toCitizenResponse(Notification notification) {
+        return new CitizenNotificationResponse(notification.getId(), notification.getTitle(), notification.getMessage(),
+                notification.getType(), notification.getCategory(), notification.getRelatedId(), notification.getActionHref(),
+                notification.getReadAt() != null, notification.getReadAt(), notification.getCreatedAt());
     }
 
     private String clean(String value) {

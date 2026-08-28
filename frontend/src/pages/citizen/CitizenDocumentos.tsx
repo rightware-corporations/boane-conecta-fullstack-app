@@ -1,114 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Download, FileText, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import { CitizenLayout } from '@/components/citizen/CitizenLayout';
 import { citizenService } from '@/services/citizen.service';
-import { Card, CardContent } from '@/components/ui/card';
+import { api } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Upload, Eye, Download, AlertTriangle } from 'lucide-react';
 import type { CitizenDocument } from '@/types';
 
-const validationColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  valid: 'default',
-  pending: 'secondary',
-  invalid: 'destructive',
-  expired: 'outline',
-};
-const validationLabels: Record<string, string> = {
-  valid: 'Válido',
-  pending: 'Pendente',
-  invalid: 'Inválido',
-  expired: 'Expirado',
-};
+const labels: Record<CitizenDocument['status'], string> = { RECEIVED: 'Recebido', SCANNING: 'Em verificação', VALID: 'Válido', REJECTED: 'Rejeitado', EXPIRED: 'Expirado', REPLACED: 'Substituído', ARCHIVED: 'Arquivado' };
 
 export default function CitizenDocumentos() {
+  const input = useRef<HTMLInputElement>(null);
   const [documents, setDocuments] = useState<CitizenDocument[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetch() {
-      const { data } = await citizenService.getDocuments();
-      if (data) setDocuments(data);
-      setLoading(false);
-    }
-    fetch();
-  }, []);
-
-  const handleUpload = async () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.pdf,.jpg,.jpeg,.png';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      const formData = new FormData();
-      formData.append('file', file);
-      const { data, error } = await citizenService.uploadDocument(formData);
-      if (data) {
-        setDocuments(prev => [data, ...prev]);
-      }
-    };
-    input.click();
-  };
-
-  return (
-    <CitizenLayout title="Documentos" subtitle="Gerir os seus documentos pessoais">
-      <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-muted-foreground">{documents.length} documento(s)</p>
-        <Button size="sm" onClick={handleUpload}>
-          <Upload className="h-4 w-4 mr-1" /> Carregar Documento
-        </Button>
-      </div>
-
-      {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
-        </div>
-      ) : documents.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">Nenhum documento carregado.</p>
-            <Button size="sm" className="mt-3" onClick={handleUpload}>
-              <Upload className="h-4 w-4 mr-1" /> Carregar Primeiro Documento
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {documents.map(doc => (
-            <Card key={doc.id}>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-muted-foreground">{doc.type}</span>
-                    <Badge variant={validationColors[doc.validation_status]} className="text-[10px]">
-                      {validationLabels[doc.validation_status]}
-                    </Badge>
-                    {doc.expiry_date && new Date(doc.expiry_date) < new Date() && (
-                      <span className="text-[10px] text-destructive flex items-center gap-0.5">
-                        <AlertTriangle className="h-3 w-3" /> Expirado
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </CitizenLayout>
-  );
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string>();
+  useEffect(() => { citizenService.getDocuments().then(result => { setDocuments(result.data ?? []); setError(result.error); setLoading(false); }); }, []);
+  const upload = async (file?: File) => { if (!file) return; setUploading(true); const body = new FormData(); body.append('file', file); body.append('title', file.name); const result = await citizenService.uploadDocument(body); if (result.data) { setDocuments(current => [result.data!, ...current]); toast.success('Documento recebido para verificação'); } else toast.error(result.error); setUploading(false); if (input.current) input.current.value = ''; };
+  const download = async (document: CitizenDocument) => { try { const blob = await api.download(`/citizen/documents/${document.id}/download`); const url = URL.createObjectURL(blob); const anchor = window.document.createElement('a'); anchor.href = url; anchor.download = document.originalFileName; anchor.click(); URL.revokeObjectURL(url); } catch { toast.error('Não foi possível descarregar o documento'); } };
+  return <CitizenLayout title="Documentos" subtitle="Carregue e acompanhe documentos usados nos serviços municipais">
+    <div className="mb-5 flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">PDF, JPG ou PNG. O estado indica se o ficheiro já foi verificado.</p><input ref={input} className="sr-only" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={event => upload(event.target.files?.[0])} /><Button disabled={uploading} onClick={() => input.current?.click()}><Upload className="mr-2 h-4 w-4" />{uploading ? 'A carregar…' : 'Carregar documento'}</Button></div>
+    {loading ? <div className="space-y-2">{[1,2,3].map(item => <Skeleton key={item} className="h-16" />)}</div> : error ? <div role="alert" className="border-l-4 border-destructive p-4">{error}</div> : documents.length === 0 ? <div className="py-14 text-center"><FileText className="mx-auto mb-3 h-8 w-8 text-muted-foreground" /><h2 className="font-semibold">Ainda não tem documentos</h2><p className="mt-1 text-sm text-muted-foreground">Carregue apenas documentos solicitados por um serviço.</p></div> : <div className="divide-y divide-border border-y border-border">{documents.map(document => <article key={document.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center"><FileText className="h-5 w-5 shrink-0 text-muted-foreground" /><div className="min-w-0 flex-1"><h2 className="truncate font-medium">{document.title}</h2><p className="text-xs text-muted-foreground">{document.documentType || document.mimeType} · {(document.fileSize / 1024).toFixed(0)} KB · {new Date(document.createdAt).toLocaleDateString('pt-PT')}</p></div><Badge variant={document.status === 'REJECTED' || document.status === 'EXPIRED' ? 'destructive' : 'secondary'}>{labels[document.status]}</Badge><Button variant="ghost" size="sm" onClick={() => download(document)}><Download className="mr-1 h-4 w-4" />Descarregar</Button></article>)}</div>}
+  </CitizenLayout>;
 }

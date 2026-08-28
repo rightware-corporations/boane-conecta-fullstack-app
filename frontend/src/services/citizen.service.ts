@@ -3,13 +3,13 @@ import type {
   CitizenProfile,
   CitizenDashboard,
   ServiceRequest,
+  CitizenRequestDetail,
   License,
   Payment,
   Appointment,
   Notification,
   CitizenDocument,
   ApiResponse,
-  PaginatedResponse,
 } from '@/types';
 
 export const citizenService = {
@@ -52,7 +52,7 @@ export const citizenService = {
       if (params?.status) queryParams.append('status', params.status);
       if (params?.page) queryParams.append('page', params.page.toString());
       const url = `/citizen/requests${queryParams.toString() ? `?${queryParams}` : ''}`;
-      const response = await api.get<PaginatedResponse<ServiceRequest>>(url);
+      const response = await api.get<ApiResponse<ServiceRequest[]>>(url);
       if (response.success) return { data: response.data };
       return { error: 'Failed to fetch requests' };
     } catch (error) {
@@ -136,11 +136,30 @@ export const citizenService = {
 
   async markNotificationRead(id: string): Promise<{ error?: string }> {
     try {
-      const response = await api.patch<ApiResponse<void>>(`/citizen/notifications/${id}`, { read: true });
+      const response = await api.patch<ApiResponse<void>>(`/citizen/notifications/${id}/read`, {});
       if (response.success) return {};
       return { error: 'Failed to update notification' };
     } catch (error) {
       return { error: getErrorMessage(error, 'Network error') };
+    }
+  },
+
+  async getRequest(id: string): Promise<{ data?: CitizenRequestDetail; error?: string }> {
+    try {
+      const response = await api.get<ApiResponse<CitizenRequestDetail>>(`/citizen/requests/${id}`);
+      return response.success ? { data: response.data } : { error: 'Não foi possível obter o pedido' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Não foi possível ligar ao serviço') };
+    }
+  },
+
+  async markAllNotificationsRead(): Promise<{ data?: Notification[]; error?: string }> {
+    try {
+      const response = await api.patch<ApiResponse<Notification[]>>('/citizen/notifications/read-all', {});
+      if (response.success) return { data: response.data };
+      return { error: 'Não foi possível atualizar as notificações' };
+    } catch (error) {
+      return { error: getErrorMessage(error, 'Não foi possível ligar ao serviço') };
     }
   },
 

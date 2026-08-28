@@ -1,56 +1,32 @@
 package mz.gov.boaneconecta.citizens.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.*;
 import java.util.List;
 import java.util.UUID;
 
 public record CitizenDashboardResponse(
-        ProfileResponse profile,
-        StatsResponse stats,
-        @JsonProperty("recent_activity") List<ActivityResponse> recentActivity,
-        @JsonProperty("upcoming_appointments") List<Object> upcomingAppointments,
-        @JsonProperty("pending_payments") List<Object> pendingPayments,
-        @JsonProperty("recent_notifications") List<Object> recentNotifications
-) {
-    public record ProfileResponse(
-            UUID id,
-            @JsonProperty("user_id") UUID userId,
-            @JsonProperty("full_name") String fullName,
-            String role,
-            String phone,
-            @JsonProperty("avatar_url") String avatarUrl,
-            String nuit,
-            String bi,
-            String address,
-            String district,
-            String neighborhood,
-            boolean verified,
-            @JsonProperty("email_notifications") boolean emailNotifications,
-            @JsonProperty("sms_notifications") boolean smsNotifications,
-            @JsonProperty("preferred_contact_method") String preferredContactMethod,
-            @JsonProperty("created_at") LocalDateTime createdAt,
-            @JsonProperty("updated_at") LocalDateTime updatedAt
-    ) {
-    }
-
-    public record StatsResponse(
-            @JsonProperty("active_licenses") long activeLicenses,
-            @JsonProperty("pending_requests") long pendingRequests,
-            @JsonProperty("pending_payments") long pendingPayments,
-            @JsonProperty("upcoming_appointments") long upcomingAppointments,
-            @JsonProperty("unread_notifications") long unreadNotifications
-    ) {
-    }
-
-    public record ActivityResponse(
-            UUID id,
-            String type,
-            String title,
-            String description,
-            LocalDateTime date,
-            String status
-    ) {
-    }
+        ProfileSummary profile,
+        @JsonProperty("action_required") List<ActionRequiredItem> actionRequired,
+        List<DraftSummary> drafts,
+        @JsonProperty("active_requests") List<RequestSummary> activeRequests,
+        @JsonProperty("next_appointment") AppointmentSummary nextAppointment,
+        @JsonProperty("pending_payments") List<PaymentSummary> pendingPayments,
+        @JsonProperty("recent_notifications") List<NotificationSummary> recentNotifications,
+        @JsonProperty("unread_notifications") long unreadNotifications) {
+    public record ProfileSummary(UUID id, @JsonProperty("full_name") String fullName, String email, String phone) {}
+    public record ActionRequiredItem(String kind, String title, String description, String href,
+                                     @JsonProperty("related_id") UUID relatedId) {}
+    public record DraftSummary(UUID id, UUID serviceId, String serviceTitle, String currentStep,
+                               long version, Instant lastSavedAt, Instant expiresAt) {}
+    public record RequestSummary(UUID id, String reference, String serviceTitle, String title,
+                                 String status, String statusLabel, String nextAction,
+                                 LocalDateTime submittedAt, LocalDateTime updatedAt) {}
+    public record AppointmentSummary(UUID id, String reference, String status, LocalDateTime startsAt,
+                                     String departmentName) {}
+    public record PaymentSummary(UUID id, String reference, BigDecimal amount, String currency,
+                                 LocalDate dueDate, UUID requestId) {}
+    public record NotificationSummary(UUID id, String title, String message, String type,
+                                      boolean read, LocalDateTime createdAt) {}
 }
