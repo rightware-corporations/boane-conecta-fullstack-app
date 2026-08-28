@@ -28,6 +28,14 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, UUID> 
         """, nativeQuery = true)
     Optional<QueueTicket> findNextWaitingForUpdate(@Param("queueId") UUID queueId,
             @Param("businessDate") java.time.LocalDate businessDate);
+    @Query(value = """
+        SELECT * FROM queue_tickets
+        WHERE queue_id = :queueId AND business_date = :businessDate AND status = 'WAITING'
+        ORDER BY CASE priority_class WHEN 'SPECIAL_OPERATIONAL' THEN 0 WHEN 'PRIORITY_ELIGIBLE' THEN 1 ELSE 2 END,
+                 sequence_number
+        """, nativeQuery = true)
+    List<QueueTicket> findWaitingSnapshot(@Param("queueId") UUID queueId,
+            @Param("businessDate") java.time.LocalDate businessDate);
     boolean existsByCalledDeskAndStatusIn(mz.gov.boaneconecta.queue.entity.QueueDesk desk,
             Collection<QueueTicketStatus> statuses);
     boolean existsByQueueAndStatusIn(MunicipalQueue queue, Collection<QueueTicketStatus> statuses);

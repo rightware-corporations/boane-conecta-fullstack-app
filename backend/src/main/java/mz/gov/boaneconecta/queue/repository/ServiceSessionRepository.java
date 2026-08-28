@@ -11,4 +11,5 @@ public interface ServiceSessionRepository extends JpaRepository<ServiceSession, 
     @Query("select session from ServiceSession session join fetch session.queueTicket join fetch session.desk where session.id = :id")
     Optional<ServiceSession> findByIdForUpdate(@Param("id") UUID id);
     boolean existsByDeskAndStatus(QueueDesk desk, ServiceSessionStatus status);
+    Optional<ServiceSession> findByDeskAndStatus(QueueDesk desk, ServiceSessionStatus status);
 }
