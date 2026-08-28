@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import org.slf4j.MDC;
 
 @Data
 @Builder
@@ -18,6 +19,8 @@ public class ApiResponse<T> {
     private String message;
     private T data;
     private List<ApiError> errors;
+    private String code;
+    private String correlationId;
 
     public static <T> ApiResponse<T> success(String message, T data) {
         return ApiResponse.<T>builder()
@@ -31,6 +34,8 @@ public class ApiResponse<T> {
         return ApiResponse.<Void>builder()
                 .success(false)
                 .message(message)
+                .code("REQUEST_FAILED")
+                .correlationId(MDC.get("correlationId"))
                 .build();
     }
 
@@ -39,6 +44,8 @@ public class ApiResponse<T> {
                 .success(false)
                 .message(message)
                 .errors(errors)
+                .code("VALIDATION_FAILED")
+                .correlationId(MDC.get("correlationId"))
                 .build();
     }
 }
