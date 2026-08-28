@@ -10,6 +10,9 @@ import mz.gov.boaneconecta.requests.dto.CitizenRequestResponse;
 import mz.gov.boaneconecta.requests.dto.CreateCitizenRequestRequest;
 import mz.gov.boaneconecta.requests.dto.RequestStatusHistoryResponse;
 import mz.gov.boaneconecta.requests.dto.UpdateRequestStatusRequest;
+import mz.gov.boaneconecta.requests.dto.CitizenRequestDetailResponse;
+import mz.gov.boaneconecta.requests.dto.CitizenSafeTimelineEntry;
+import mz.gov.boaneconecta.requests.dto.CitizenSafeDocumentSummary;
 import mz.gov.boaneconecta.requests.entity.CitizenRequest;
 import mz.gov.boaneconecta.requests.entity.RequestStatus;
 import mz.gov.boaneconecta.requests.entity.RequestStatusHistory;
@@ -35,16 +38,19 @@ public class CitizenRequestService {
     private final RequestStatusHistoryRepository statusHistoryRepository;
     private final UserRepository userRepository;
     private final MunicipalServiceRepository municipalServiceRepository;
+    private final mz.gov.boaneconecta.requests.repository.RequestDocumentsRepository requestDocumentsRepository;
 
     public CitizenRequestService(
             CitizenRequestRepository citizenRequestRepository,
             RequestStatusHistoryRepository statusHistoryRepository,
             UserRepository userRepository,
-            MunicipalServiceRepository municipalServiceRepository) {
+            MunicipalServiceRepository municipalServiceRepository,
+            mz.gov.boaneconecta.requests.repository.RequestDocumentsRepository requestDocumentsRepository) {
         this.citizenRequestRepository = citizenRequestRepository;
         this.statusHistoryRepository = statusHistoryRepository;
         this.userRepository = userRepository;
         this.municipalServiceRepository = municipalServiceRepository;
+        this.requestDocumentsRepository = requestDocumentsRepository;
     }
 
     @Transactional
@@ -59,7 +65,7 @@ public class CitizenRequestService {
                 .title(cleanRequired(request.title()))
                 .description(clean(request.description()))
                 .status(RequestStatus.SUBMITTED)
-                .priority(request.priority() == null ? Priority.NORMAL : request.priority())
+                .priority(Priority.NORMAL)
                 .submittedAt(LocalDateTime.now())
                 .build();
 
@@ -82,6 +88,52 @@ public class CitizenRequestService {
         CitizenRequest request = citizenRequestRepository.findByIdAndCitizenUser(requestId, citizen)
                 .orElseThrow(() -> new ResourceNotFoundException("Citizen request not found"));
         return toResponse(request, true);
+    }
+
+    @Transactional(readOnly = true)
+    public CitizenRequestDetailResponse getCitizenSafeDetail(UUID citizenUserId, UUID requestId) {
+        User citizen = requireUser(citizenUserId);
+        CitizenRequest request = citizenRequestRepository.findByIdAndCitizenUser(requestId, citizen)
+                .orElseThrow(() -> new ResourceNotFoundException("Citizen request not found"));
+        MunicipalService service = request.getService();
+        List<CitizenSafeTimelineEntry> timeline = statusHistoryRepository.findByRequestOrderByCreatedAtAsc(request)
+                .stream().map(item -> new CitizenSafeTimelineEntry(
+                        item.getNewStatus(), statusLabel(item.getNewStatus()), item.getCreatedAt())).toList();
+        List<CitizenSafeDocumentSummary> documents = requestDocumentsRepository.findByRequest(request).stream()
+                .map(link -> new CitizenSafeDocumentSummary(link.getDocument().getId(), link.getDocument().getTitle(),
+                        link.getDocument().getFileName(), link.getDocument().getStatus())).toList();
+        return new CitizenRequestDetailResponse(request.getId(), request.getRequestNumber(),
+                service == null ? null : service.getId(), service == null ? null : service.getTitle(),
+                request.getTitle(), request.getStatus(), statusLabel(request.getStatus()), nextAction(request.getStatus()),
+                request.getSubmittedAt(), timeline, documents, availableActions(request.getStatus()));
+    }
+
+    private String statusLabel(RequestStatus status) {
+        return switch (status) {
+            case DRAFT -> "Rascunho";
+            case SUBMITTED -> "Submetido";
+            case UNDER_REVIEW -> "Em análise";
+            case WAITING_PAYMENT -> "A aguardar pagamento";
+            case APPROVED -> "Aprovado";
+            case REJECTED -> "Rejeitado";
+            case CANCELLED -> "Cancelado";
+            case COMPLETED -> "Concluído";
+        };
+    }
+
+    private String nextAction(RequestStatus status) {
+        return switch (status) {
+            case SUBMITTED, UNDER_REVIEW -> "Aguarde a análise do Município de Boane.";
+            case WAITING_PAYMENT -> "Consulte as instruções de pagamento associadas ao pedido.";
+            case APPROVED, COMPLETED -> "O pedido não exige nenhuma ação adicional.";
+            case REJECTED -> "Consulte a comunicação oficial recebida sobre o pedido.";
+            case CANCELLED -> "Este pedido foi cancelado.";
+            case DRAFT -> "Conclua e submeta o pedido.";
+        };
+    }
+
+    private List<String> availableActions(RequestStatus status) {
+        return status == RequestStatus.SUBMITTED ? List.of("VIEW", "CANCEL_IF_ALLOWED") : List.of("VIEW");
     }
 
     @Transactional(readOnly = true)
