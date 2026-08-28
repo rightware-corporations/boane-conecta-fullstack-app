@@ -16,7 +16,7 @@ import java.util.UUID;
 @Table(name = "queue_tickets")
 public class QueueTicket {
     @Id @GeneratedValue(strategy = GenerationType.AUTO) private UUID id;
-    @Column(name = "ticket_number", nullable = false, unique = true, length = 30) private String ticketNumber;
+    @Column(name = "ticket_number", nullable = false, length = 30) private String ticketNumber;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "queue_id", nullable = false) private MunicipalQueue queue;
     @Column(name = "business_date", nullable = false) private LocalDate businessDate;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "citizen_user_id") private User citizenUser;
