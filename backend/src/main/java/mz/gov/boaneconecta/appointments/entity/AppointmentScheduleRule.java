@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import mz.gov.boaneconecta.departments.entity.Department;
 import mz.gov.boaneconecta.municipalservices.entity.MunicipalService;
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import java.time.*;
 import java.util.UUID;
 
