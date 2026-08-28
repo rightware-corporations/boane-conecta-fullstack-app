@@ -40,6 +40,23 @@ public class Appointment {
     @Column(name = "check_in_code_hash", unique = true, length = 64)
     private String checkInCodeHash;
 
+    @Column(name = "check_in_code_expires_at")
+    private Instant checkInCodeExpiresAt;
+
+    @Column(name = "check_in_code_consumed_at")
+    private Instant checkInCodeConsumedAt;
+
+    @Builder.Default
+    @Column(name = "check_in_failed_attempts", nullable = false)
+    private Integer checkInFailedAttempts = 0;
+
+    @Column(name = "check_in_method", length = 30)
+    private String checkInMethod;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "check_in_actor_user_id")
+    private User checkInActorUser;
+
     @Column(name = "checked_in_at")
     private Instant checkedInAt;
 
