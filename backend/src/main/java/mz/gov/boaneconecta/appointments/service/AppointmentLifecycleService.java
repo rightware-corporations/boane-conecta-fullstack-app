@@ -126,7 +126,7 @@ public class AppointmentLifecycleService {
     private AppointmentConfirmationResponse response(Appointment appointment, boolean replayed) {
         List<String> actions = appointment.getStatus() == AppointmentStatus.CONFIRMED ? List.of("CANCEL", "RESCHEDULE") : List.of();
         return new AppointmentConfirmationResponse(appointment.getId(), appointment.getAppointmentNumber(), appointment.getStatus(),
-                appointment.getSlot().getStartTime(), actions, replayed, null);
+                appointment.getSlot().getStartTime(), actions, appointment.getVersion(), replayed, null);
     }
     private String clean(String value) { return value == null ? "" : value.trim(); }
     private String hash(String value) {

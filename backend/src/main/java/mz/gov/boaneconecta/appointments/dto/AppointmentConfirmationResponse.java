@@ -7,4 +7,4 @@ import java.util.UUID;
 
 public record AppointmentConfirmationResponse(UUID appointmentId, String reference,
         AppointmentStatus status, Instant startsAt, List<String> availableActions,
-        boolean replayed, String checkInCredential) {}
+        Long version, boolean replayed, String checkInCredential) {}

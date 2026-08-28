@@ -19,6 +19,7 @@ public record AppointmentResponse(
         String reason,
         AppointmentStatus status,
         SlotStatus slotStatus,
+        Long version,
         Instant createdAt,
         Instant updatedAt) {
 }

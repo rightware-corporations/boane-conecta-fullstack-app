@@ -89,7 +89,8 @@ public class AppointmentConfirmationService {
 
     private AppointmentConfirmationResponse response(Appointment appointment, boolean replayed, String credential) {
         return new AppointmentConfirmationResponse(appointment.getId(), appointment.getAppointmentNumber(),
-                appointment.getStatus(), appointment.getSlot().getStartTime(), List.of("CANCEL", "RESCHEDULE"), replayed, credential);
+                appointment.getStatus(), appointment.getSlot().getStartTime(), List.of("CANCEL", "RESCHEDULE"),
+                appointment.getVersion(), replayed, credential);
     }
     private String generateReference() {
         String prefix = "APT-" + LocalDate.now(clock).format(DateTimeFormatter.BASIC_ISO_DATE) + "-";

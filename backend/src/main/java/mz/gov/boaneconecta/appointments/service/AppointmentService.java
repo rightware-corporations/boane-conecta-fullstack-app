@@ -198,6 +198,7 @@ public class AppointmentService {
                 appointment.getReason(),
                 appointment.getStatus(),
                 slot == null ? null : slot.getStatus(),
+                appointment.getVersion(),
                 appointment.getCreatedAt(),
                 appointment.getUpdatedAt());
     }
