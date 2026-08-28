@@ -19,7 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
@@ -33,19 +34,22 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final AppointmentSlotRepository appointmentSlotRepository;
     private final UserRepository userRepository;
+    private final Clock clock;
 
     public AppointmentService(
             AppointmentRepository appointmentRepository,
             AppointmentSlotRepository appointmentSlotRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            Clock clock) {
         this.appointmentRepository = appointmentRepository;
         this.appointmentSlotRepository = appointmentSlotRepository;
         this.userRepository = userRepository;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
     public List<AppointmentSlotResponse> listAvailableSlots() {
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = clock.instant();
         return appointmentSlotRepository.findAll().stream()
                 .filter(slot -> slot.getStatus() == SlotStatus.AVAILABLE)
                 .filter(slot -> slot.getStartTime() != null && slot.getStartTime().isAfter(now))
@@ -103,7 +107,7 @@ public class AppointmentService {
         }
         appointment.setStatus(AppointmentStatus.CANCELLED);
         AppointmentSlot slot = appointment.getSlot();
-        if (slot != null && slot.getStartTime() != null && slot.getStartTime().isAfter(LocalDateTime.now())) {
+        if (slot != null && slot.getStartTime() != null && slot.getStartTime().isAfter(clock.instant())) {
             slot.setStatus(SlotStatus.AVAILABLE);
             appointmentSlotRepository.saveAndFlush(slot);
         }
@@ -148,7 +152,7 @@ public class AppointmentService {
         if (slot.getStatus() != SlotStatus.AVAILABLE) {
             throw new ResourceConflictException("Appointment slot is not available");
         }
-        if (slot.getStartTime() == null || !slot.getStartTime().isAfter(LocalDateTime.now())) {
+        if (slot.getStartTime() == null || !slot.getStartTime().isAfter(clock.instant())) {
             throw new IllegalArgumentException("Appointment slot must be in the future");
         }
         if (slot.getEndTime() == null || !slot.getEndTime().isAfter(slot.getStartTime())) {
@@ -211,7 +215,7 @@ public class AppointmentService {
     }
 
     private String generateAppointmentNumber() {
-        String prefix = "APT-" + LocalDate.now().format(APPOINTMENT_DATE_FORMAT) + "-";
+        String prefix = "APT-" + LocalDate.now(clock).format(APPOINTMENT_DATE_FORMAT) + "-";
         for (int attempt = 0; attempt < 20; attempt++) {
             String candidate = prefix + ThreadLocalRandom.current().nextInt(100000, 999999);
             if (!appointmentRepository.existsByAppointmentNumber(candidate)) {
