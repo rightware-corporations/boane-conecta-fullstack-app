@@ -1,6 +1,6 @@
 # ADR F3-001 — Approved Backend Foundation Decisions
 
-Status: accepted  
+Status: accepted
 Scope: backend F3 only
 
 ## Context
