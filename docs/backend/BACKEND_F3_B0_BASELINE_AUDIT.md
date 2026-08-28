@@ -1,8 +1,8 @@
 # Boane Conecta Backend F3 — B0 Baseline Audit
 
-Status: completed  
-Branch: `feat/backend-f3-request-foundation`  
-Local base: `216666c769c815543664aefd7ff0a7fad419da7c`  
+Status: completed
+Branch: `feat/backend-f3-request-foundation`
+Local base: `216666c769c815543664aefd7ff0a7fad419da7c`
 Remote-equivalent F2 tree: `a93dcbab11e87ce507bde48e7821309ccdfab81d`
 
 ## Repository baseline
