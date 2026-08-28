@@ -1,6 +1,7 @@
 package mz.gov.boaneconecta.appointments.repository;
 
 import mz.gov.boaneconecta.appointments.entity.AppointmentSlot;
+import mz.gov.boaneconecta.appointments.entity.AppointmentScheduleRule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Lock;
