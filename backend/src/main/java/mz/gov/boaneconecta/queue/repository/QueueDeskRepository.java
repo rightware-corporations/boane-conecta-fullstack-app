@@ -1,6 +1,7 @@
 package mz.gov.boaneconecta.queue.repository;
 
 import mz.gov.boaneconecta.queue.entity.QueueDesk;
+import mz.gov.boaneconecta.queue.entity.MunicipalQueue;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
