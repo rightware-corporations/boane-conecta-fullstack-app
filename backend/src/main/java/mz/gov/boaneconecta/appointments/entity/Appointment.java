@@ -43,6 +43,12 @@ public class Appointment {
     @Column(name = "checked_in_at")
     private Instant checkedInAt;
 
+    @Column(name = "cancelled_at")
+    private Instant cancelledAt;
+
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
+
     @Column(columnDefinition = "TEXT")
     private String reason;
 
