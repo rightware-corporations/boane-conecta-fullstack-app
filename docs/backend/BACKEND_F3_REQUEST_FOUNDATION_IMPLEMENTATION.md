@@ -1,6 +1,6 @@
 # Boane Conecta — F3 Request Foundation Implementation
 
-Status: implemented on `feat/backend-f3-request-foundation`  
+Status: implemented on `feat/backend-f3-request-foundation`
 Scope: backend request foundation only; no mobile client, no F2/F3 frontend redesign.
 
 ## Delivered stages
