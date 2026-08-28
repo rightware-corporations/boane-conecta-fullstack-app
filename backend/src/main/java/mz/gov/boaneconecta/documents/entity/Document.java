@@ -55,10 +55,12 @@ public class Document {
     private String sha256;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(nullable = false, length = 30)
     private DocumentClassification classification = DocumentClassification.PERSONAL;
 
     @Column(name = "current_version_number", nullable = false)
+    @Builder.Default
     private Integer currentVersionNumber = 1;
 
     @Column(name = "scan_failure_code", length = 80)
@@ -71,10 +73,12 @@ public class Document {
     private Long fileSize;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(nullable = false, length = 30)
     private Visibility visibility = Visibility.PRIVATE;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(nullable = false, length = 30)
     private DocumentStatus status = DocumentStatus.RECEIVED;
 
