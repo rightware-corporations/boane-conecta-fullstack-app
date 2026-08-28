@@ -66,6 +66,10 @@ appointments:
     ttl: ${APPOINTMENT_HOLD_TTL:PT10M}
   cancellation:
     cutoff: ${APPOINTMENT_CANCELLATION_CUTOFF:PT24H}
+  check-in:
+    opens-before: ${APPOINTMENT_CHECK_IN_OPENS_BEFORE:PT30M}
+    late-tolerance: ${APPOINTMENT_CHECK_IN_LATE_TOLERANCE:PT15M}
+    max-failed-attempts: ${APPOINTMENT_CHECK_IN_MAX_FAILED_ATTEMPTS:5}
 
 ---
 spring:
