@@ -9,6 +9,9 @@ import mz.gov.boaneconecta.appointments.dto.AppointmentConfirmationResponse;
 import mz.gov.boaneconecta.appointments.dto.CancelAppointmentRequest;
 import mz.gov.boaneconecta.appointments.dto.RescheduleAppointmentRequest;
 import mz.gov.boaneconecta.appointments.service.AppointmentLifecycleService;
+import mz.gov.boaneconecta.appointments.service.AppointmentCheckInService;
+import mz.gov.boaneconecta.appointments.dto.CheckInRequest;
+import mz.gov.boaneconecta.appointments.dto.CheckInResponse;
 import mz.gov.boaneconecta.requests.draft.service.VersionHeaderParser;
 import jakarta.validation.Valid;
 import mz.gov.boaneconecta.core.response.ApiResponse;
@@ -36,11 +39,13 @@ public class CitizenAppointmentController {
     private final AppointmentAvailabilityService availabilityService;
     private final AppointmentLifecycleService lifecycleService;
     private final VersionHeaderParser versionHeaderParser;
+    private final AppointmentCheckInService checkInService;
 
     public CitizenAppointmentController(AppointmentService appointmentService, AppointmentAvailabilityService availabilityService,
-            AppointmentLifecycleService lifecycleService, VersionHeaderParser versionHeaderParser) {
+            AppointmentLifecycleService lifecycleService, VersionHeaderParser versionHeaderParser,
+            AppointmentCheckInService checkInService) {
         this.appointmentService = appointmentService; this.availabilityService = availabilityService;
-        this.lifecycleService = lifecycleService; this.versionHeaderParser = versionHeaderParser;
+        this.lifecycleService = lifecycleService; this.versionHeaderParser = versionHeaderParser; this.checkInService = checkInService;
     }
 
     @GetMapping("/availability")
@@ -83,5 +88,13 @@ public class CitizenAppointmentController {
             @RequestHeader("If-Match") String ifMatch, @Valid @RequestBody RescheduleAppointmentRequest request) {
         return ApiResponse.success("Appointment rescheduled", lifecycleService.reschedule(principal.getId(), id,
                 request.holdId(), request.holdVersion(), idempotencyKey, versionHeaderParser.parse(ifMatch)));
+    }
+
+    @PostMapping("/{id}/check-in")
+    public ApiResponse<CheckInResponse> checkIn(@AuthenticationPrincipal UserDetailsImpl principal,
+            @PathVariable UUID id, @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @Valid @RequestBody CheckInRequest request) {
+        return ApiResponse.success("Appointment checked in", checkInService.citizenCheckIn(principal.getId(), id,
+                request.method(), request.credential(), idempotencyKey));
     }
 }
