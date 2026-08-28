@@ -20,7 +20,7 @@ function CitizenMobileNavigation() {
     <nav aria-label="Navegação da área do munícipe" className="fixed inset-x-0 bottom-0 z-40 border-t bg-surface tb:hidden">
       <ul className="grid grid-cols-5">
         {mobileNavigation.map(({ label, href, icon: Icon }) => {
-          const active = pathname === href;
+          const active = href === '/municipe' ? pathname === href : pathname.startsWith(href);
           return (
             <li key={href}>
               <Link
