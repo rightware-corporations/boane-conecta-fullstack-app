@@ -39,8 +39,32 @@ public class Document {
     @Column(name = "original_file_name", length = 255)
     private String originalFileName;
 
-    @Column(name = "file_path", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "file_path", columnDefinition = "TEXT")
     private String filePath;
+
+    @Column(name = "storage_bucket", length = 120)
+    private String storageBucket;
+
+    @Column(name = "storage_key", columnDefinition = "TEXT")
+    private String storageKey;
+
+    @Column(name = "detected_mime_type", length = 100)
+    private String detectedMimeType;
+
+    @Column(length = 64)
+    private String sha256;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(nullable = false, length = 30)
+    private DocumentClassification classification = DocumentClassification.PERSONAL;
+
+    @Column(name = "current_version_number", nullable = false)
+    @Builder.Default
+    private Integer currentVersionNumber = 1;
+
+    @Column(name = "scan_failure_code", length = 80)
+    private String scanFailureCode;
 
     @Column(name = "mime_type", length = 100)
     private String mimeType;
@@ -49,12 +73,14 @@ public class Document {
     private Long fileSize;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(nullable = false, length = 30)
     private Visibility visibility = Visibility.PRIVATE;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(nullable = false, length = 30)
-    private DocumentStatus status = DocumentStatus.ACTIVE;
+    private DocumentStatus status = DocumentStatus.RECEIVED;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -63,4 +89,18 @@ public class Document {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public void markScanning() {
+        status = DocumentStatus.SCANNING;
+    }
+
+    public void markValid() {
+        status = DocumentStatus.VALID;
+        scanFailureCode = null;
+    }
+
+    public void reject(String failureCode) {
+        status = DocumentStatus.REJECTED;
+        scanFailureCode = failureCode;
+    }
 }

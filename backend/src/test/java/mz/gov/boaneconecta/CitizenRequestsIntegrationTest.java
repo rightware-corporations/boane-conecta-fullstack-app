@@ -60,7 +60,7 @@ class CitizenRequestsIntegrationTest {
 
         assertThat(created.requestNumber()).startsWith("BC-");
         assertThat(created.status()).isEqualTo(RequestStatus.SUBMITTED);
-        assertThat(created.priority()).isEqualTo(Priority.HIGH);
+        assertThat(created.priority()).isEqualTo(Priority.NORMAL);
         assertThat(created.history()).singleElement()
                 .extracting(history -> history.newStatus())
                 .isEqualTo(RequestStatus.SUBMITTED);

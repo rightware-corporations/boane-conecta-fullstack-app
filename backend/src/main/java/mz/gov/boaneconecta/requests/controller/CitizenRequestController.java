@@ -5,6 +5,7 @@ import mz.gov.boaneconecta.core.response.ApiResponse;
 import mz.gov.boaneconecta.core.security.UserDetailsImpl;
 import mz.gov.boaneconecta.requests.dto.CitizenRequestResponse;
 import mz.gov.boaneconecta.requests.dto.CreateCitizenRequestRequest;
+import mz.gov.boaneconecta.requests.dto.CitizenRequestDetailResponse;
 import mz.gov.boaneconecta.requests.service.CitizenRequestService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +36,9 @@ public class CitizenRequestController {
             @AuthenticationPrincipal UserDetailsImpl principal,
             @Valid @RequestBody CreateCitizenRequestRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Deprecation", "true")
+                .header("Sunset", "Tue, 01 Dec 2026 00:00:00 GMT")
+                .header("Link", "</api/v1/citizen/request-drafts>; rel=\"successor-version\"")
                 .body(ApiResponse.success(
                         "Citizen request submitted",
                         citizenRequestService.create(principal.getId(), request)));
@@ -49,11 +53,11 @@ public class CitizenRequestController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<CitizenRequestResponse> get(
+    public ApiResponse<CitizenRequestDetailResponse> get(
             @AuthenticationPrincipal UserDetailsImpl principal,
             @PathVariable UUID id) {
         return ApiResponse.success(
                 "Citizen request retrieved",
-                citizenRequestService.getCitizen(principal.getId(), id));
+                citizenRequestService.getCitizenSafeDetail(principal.getId(), id));
     }
 }

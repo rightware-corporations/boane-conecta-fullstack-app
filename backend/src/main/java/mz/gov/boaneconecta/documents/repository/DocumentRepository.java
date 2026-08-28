@@ -14,6 +14,7 @@ import java.util.UUID;
 public interface DocumentRepository extends JpaRepository<Document, UUID> {
     List<Document> findByOwnerUserOrderByCreatedAtDesc(User ownerUser);
     List<Document> findByOwnerUserAndStatusOrderByCreatedAtDesc(User ownerUser, DocumentStatus status);
+    List<Document> findByOwnerUserAndStatusNotOrderByCreatedAtDesc(User ownerUser, DocumentStatus status);
     Optional<Document> findByIdAndOwnerUser(UUID id, User ownerUser);
     List<Document> findAllByOrderByCreatedAtDesc();
     List<Document> findByStatusOrderByCreatedAtDesc(DocumentStatus status);

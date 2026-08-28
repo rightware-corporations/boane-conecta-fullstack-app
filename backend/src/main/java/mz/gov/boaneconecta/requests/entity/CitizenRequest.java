@@ -12,7 +12,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
+import mz.gov.boaneconecta.requests.draft.entity.RequestDraft;
+import mz.gov.boaneconecta.requests.submission.entity.RequestAnswerSnapshot;
 
 @Data
 @Builder
@@ -43,10 +46,12 @@ public class CitizenRequest {
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(nullable = false, length = 40)
     private RequestStatus status = RequestStatus.SUBMITTED;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(length = 30)
     private Priority priority = Priority.NORMAL;
 
@@ -59,6 +64,20 @@ public class CitizenRequest {
     @ManyToOne
     @JoinColumn(name = "assigned_to_user_id")
     private User assignedToUser;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_draft_id", unique = true)
+    private RequestDraft sourceDraft;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "answer_snapshot_id")
+    private RequestAnswerSnapshot answerSnapshot;
+
+    @Column(name = "declaration_version", length = 80)
+    private String declarationVersion;
+
+    @Column(name = "declaration_accepted_at")
+    private Instant declarationAcceptedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
