@@ -1,129 +1,90 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, ArrowLeft, CalendarDays, CheckCircle2, Clock3, RefreshCw, Ticket, Users } from 'lucide-react';
+
 import { CitizenLayout } from '@/components/citizen/CitizenLayout';
-import { citizenService } from '@/services/citizen.service';
-import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, MapPin, Clock, XCircle, CheckCircle2, RefreshCw } from 'lucide-react';
-import type { Appointment } from '@/types';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  cancelAppointment, checkIn, confirmHold, createHold, getAvailability, getQueueTicket, listAppointments,
+} from '@/features/appointments/api/appointments.api';
+import type { Appointment, AppointmentConfirmation, AppointmentHold, AvailabilitySlot } from '@/features/appointments/types';
+import { getMunicipalServices } from '@/features/service-catalog/api/service-catalog.api';
+import { cn } from '@/lib/utils';
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  scheduled: { label: 'Agendado', variant: 'secondary' },
-  confirmed: { label: 'Confirmado', variant: 'default' },
-  completed: { label: 'Concluído', variant: 'default' },
-  cancelled: { label: 'Cancelado', variant: 'outline' },
-  rescheduled: { label: 'Reagendado', variant: 'secondary' },
-};
+type View = 'list' | 'book' | 'confirmation' | 'detail' | 'check-in' | 'ticket';
+const labels: Record<string, string> = { CONFIRMED: 'Confirmado', CHECKED_IN: 'Check-in concluído', IN_SERVICE: 'Em atendimento', COMPLETED: 'Concluído', CANCELLED: 'Cancelado', NO_SHOW: 'Não compareceu', RESCHEDULED: 'Reagendado', WAITING: 'A aguardar', CALLED: 'Chamado', SERVING: 'Em atendimento' };
+const day = (date: Date) => date.toISOString().slice(0, 10);
+const dateTime = (value: string | null) => value ? new Intl.DateTimeFormat('pt-MZ', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value)) : 'Data por confirmar';
+
+function Status({ value }: { value: string }) {
+  return <Badge variant={value === 'CANCELLED' ? 'outline' : 'secondary'}>{labels[value] || value}</Badge>;
+}
+
+function Failure({ message, retry }: { message: string; retry: () => void }) {
+  return <Alert variant="destructive"><AlertCircle className="size-4" /><AlertTitle>Algo correu mal</AlertTitle><AlertDescription className="space-y-3"><p>{message}</p><Button variant="outline" size="sm" onClick={retry}><RefreshCw className="mr-2 size-4" />Tentar novamente</Button></AlertDescription></Alert>;
+}
+
+function Countdown({ expiresAt, expired }: { expiresAt: string; expired: () => void }) {
+  const [seconds, setSeconds] = useState(() => Math.max(0, Math.ceil((Date.parse(expiresAt) - Date.now()) / 1000)));
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const next = Math.max(0, Math.ceil((Date.parse(expiresAt) - Date.now()) / 1000));
+      setSeconds(next);
+      if (!next) { window.clearInterval(timer); expired(); }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [expiresAt, expired]);
+  return <p className="flex items-center gap-2 text-sm font-medium" role="timer" aria-live="polite"><Clock3 className="size-4" />Horário reservado por {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</p>;
+}
+
+function DigitalTicket({ id, back }: { id: string; back: () => void }) {
+  const [online, setOnline] = useState(navigator.onLine);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    window.addEventListener('online', update); window.addEventListener('offline', update);
+    return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update); };
+  }, []);
+  const query = useQuery({ queryKey: ['queue-ticket', id], queryFn: () => getQueueTicket(id), refetchOnWindowFocus: true, refetchOnReconnect: true, refetchInterval: (state) => document.hidden || !online ? false : ['CALLED', 'SERVING'].includes(state.state.data?.status || '') ? 5_000 : 15_000 });
+  if (query.isLoading) return <Skeleton className="h-72 w-full" />;
+  if (!query.data || query.isError) return <Failure message="Não foi possível carregar a senha digital." retry={() => query.refetch()} />;
+  const ticket = query.data; const called = ticket.status === 'CALLED';
+  return <section className="mx-auto max-w-2xl space-y-6"><Button variant="ghost" onClick={back}><ArrowLeft className="mr-2 size-4" />Voltar</Button>{!online && <Alert><AlertCircle className="size-4" /><AlertTitle>Sem ligação</AlertTitle><AlertDescription>Última atualização: {dateTime(ticket.lastUpdatedAt)}. O estado pode estar desatualizado.</AlertDescription></Alert>}<div className={cn('rounded-lg border bg-card p-6 text-center tb:p-10', called && 'border-primary ring-2 ring-primary/20')}><Ticket className="mx-auto mb-4 size-8 text-primary" /><p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">A sua senha</p><h2 className="mt-2 text-4xl font-bold tb:text-5xl">{ticket.ticketCode}</h2><div className="mt-4"><Status value={ticket.status} /></div>{called ? <p className="mt-6 text-xl font-semibold">Dirija-se a {ticket.deskDisplayName || 'balcão indicado'}.</p> : <div className="mt-8 flex items-center justify-center gap-3"><Users className="size-5 text-muted-foreground" /><p><span className="text-2xl font-semibold">{ticket.peopleAhead ?? '—'}</span><br /><span className="text-sm text-muted-foreground">pessoas à frente</span></p></div>}<p className="mt-8 text-xs text-muted-foreground">Atualizado em {dateTime(ticket.lastUpdatedAt)}</p></div></section>;
+}
 
 export default function CitizenAgendamentos() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const client = useQueryClient();
+  const [view, setView] = useState<View>('list');
+  const [selected, setSelected] = useState<Appointment | null>(null);
+  const [serviceId, setServiceId] = useState(''); const [location, setLocation] = useState(''); const [date, setDate] = useState(day(new Date()));
+  const [slot, setSlot] = useState<AvailabilitySlot | null>(null); const [hold, setHold] = useState<AppointmentHold | null>(null); const [isExpired, setExpired] = useState(false);
+  const [reason, setReason] = useState('Atendimento municipal'); const [confirmation, setConfirmation] = useState<AppointmentConfirmation | null>(null);
+  const [credential, setCredential] = useState(''); const [cancelReason, setCancelReason] = useState('Já não necessito deste horário'); const [ticketId, setTicketId] = useState('');
+  const appointments = useQuery({ queryKey: ['citizen-appointments'], queryFn: listAppointments });
+  const services = useQuery({ queryKey: ['public-services'], queryFn: getMunicipalServices, staleTime: 300_000 });
+  const service = services.data?.find((item) => item.id === serviceId);
+  const availability = useQuery({ queryKey: ['appointment-availability', serviceId, location, date], queryFn: () => getAvailability({ serviceId, locationCode: location, from: date, to: date }), enabled: view === 'book' && Boolean(serviceId && location && date) });
+  const holdCommand = useMutation({ mutationFn: createHold, onSuccess: (value) => { setHold(value); setExpired(false); } });
+  const confirmCommand = useMutation({ mutationFn: () => confirmHold(hold as AppointmentHold, reason), onSuccess: (value) => { setConfirmation(value); if (value.checkInCredential) sessionStorage.setItem(`appointment-check-in:${value.appointmentId}`, value.checkInCredential); client.invalidateQueries({ queryKey: ['citizen-appointments'] }); setView('confirmation'); } });
+  const cancelCommand = useMutation({ mutationFn: () => cancelAppointment(selected as Appointment, cancelReason), onSuccess: () => { client.invalidateQueries({ queryKey: ['citizen-appointments'] }); setSelected(null); setView('list'); } });
+  const checkInCommand = useMutation({ mutationFn: () => checkIn({ appointmentId: selected?.id || confirmation?.appointmentId || '', method: 'MANUAL_CODE', credential }), onSuccess: (value) => { setTicketId(value.queueTicket.id); client.invalidateQueries({ queryKey: ['citizen-appointments'] }); setView('ticket'); } });
+  const grouped = useMemo(() => { const now = Date.now(); const items = appointments.data || []; return { future: items.filter((item) => item.status !== 'CANCELLED' && (!item.startTime || Date.parse(item.startTime) >= now)), history: items.filter((item) => item.status === 'CANCELLED' || Boolean(item.startTime && Date.parse(item.startTime) < now)) }; }, [appointments.data]);
+  const open = (item: Appointment) => { setSelected(item); setCredential(sessionStorage.getItem(`appointment-check-in:${item.id}`) || ''); setView('detail'); };
+  const start = () => { setSlot(null); setHold(null); setConfirmation(null); setView('book'); };
 
-  useEffect(() => {
-    async function fetch() {
-      const { data } = await citizenService.getAppointments();
-      if (data) setAppointments(data);
-      setLoading(false);
-    }
-    fetch();
-  }, []);
-
-  const upcoming = appointments.filter(a => new Date(a.date) >= new Date() && a.status !== 'cancelled');
-  const past = appointments.filter(a => new Date(a.date) < new Date() || a.status === 'cancelled');
-
-  return (
-    <CitizenLayout title="Agendamentos" subtitle="Os seus agendamentos no município">
-      {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
-        </div>
-      ) : appointments.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">Sem agendamentos.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {upcoming.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-foreground mb-3">Próximos Agendamentos</h3>
-              <div className="space-y-3">
-                {upcoming.map(appt => {
-                  const config = statusConfig[appt.status] || statusConfig.scheduled;
-                  return (
-                    <Card key={appt.id} className="border-l-4 border-l-primary">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="text-sm font-semibold text-foreground">{appt.service_name}</p>
-                              <Badge variant={config.variant} className="text-[10px]">{config.label}</Badge>
-                            </div>
-                            <div className="space-y-1 mt-2">
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(appt.date).toLocaleDateString('pt-PT')} às {appt.time}
-                              </p>
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                <MapPin className="h-3 w-3" /> {appt.location}
-                                {appt.counter && ` — Balcão ${appt.counter}`}
-                              </p>
-                            </div>
-                            {appt.instructions && (
-                              <p className="text-xs text-muted-foreground mt-2 bg-muted p-2 rounded">{appt.instructions}</p>
-                            )}
-                          </div>
-                          <div className="flex gap-1 flex-shrink-0">
-                            {(appt.status === 'scheduled' || appt.status === 'confirmed') && (
-                              <>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" title="Reagendar">
-                                  <RefreshCw className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title="Cancelar">
-                                  <XCircle className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {past.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-foreground mb-3">Histórico</h3>
-              <div className="space-y-3">
-                {past.map(appt => {
-                  const config = statusConfig[appt.status] || statusConfig.completed;
-                  return (
-                    <Card key={appt.id} className="opacity-75">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{appt.service_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(appt.date).toLocaleDateString('pt-PT')} — {appt.location}
-                            </p>
-                          </div>
-                          <Badge variant={config.variant} className="text-[10px]">{config.label}</Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </CitizenLayout>
-  );
+  let body;
+  if (view === 'ticket' && ticketId) body = <DigitalTicket id={ticketId} back={() => setView('list')} />;
+  else if (view === 'confirmation' && confirmation) body = <section className="mx-auto max-w-2xl"><div className="rounded-lg border bg-card p-6 tb:p-8"><CheckCircle2 className="mb-4 size-8 text-primary" /><h2 className="text-2xl font-semibold">Agendamento confirmado</h2><p className="mt-2 text-muted-foreground">Guarde a referência para acompanhar o atendimento.</p><dl className="mt-6 grid gap-4 border-y py-5 xsm:grid-cols-2"><div><dt className="text-xs text-muted-foreground">Referência</dt><dd className="font-semibold">{confirmation.reference}</dd></div><div><dt className="text-xs text-muted-foreground">Data e hora</dt><dd className="font-medium">{dateTime(confirmation.startsAt)}</dd></div></dl>{confirmation.checkInCredential && <Alert className="mt-6"><AlertCircle className="size-4" /><AlertTitle>Código de check-in — mostrado uma vez</AlertTitle><AlertDescription><code className="mt-2 block break-all rounded bg-muted p-3 text-xs">{confirmation.checkInCredential}</code></AlertDescription></Alert>}<div className="mt-6 flex flex-wrap gap-3"><Button onClick={() => { setSelected({ id: confirmation.appointmentId, appointmentNumber: confirmation.reference, status: confirmation.status, startTime: confirmation.startsAt, endTime: null, slotId: null, departmentName: null, reason, slotStatus: null, version: confirmation.version, createdAt: '', updatedAt: '' }); setCredential(confirmation.checkInCredential || ''); setView('check-in'); }}>Fazer check-in</Button><Button variant="outline" onClick={() => setView('list')}>Ver agendamentos</Button></div></div></section>;
+  else if (view === 'check-in' && selected) body = <section className="mx-auto max-w-xl space-y-6"><Button variant="ghost" onClick={() => setView('detail')}><ArrowLeft className="mr-2 size-4" />Voltar</Button><div><p className="text-sm font-medium text-primary">Chegada ao atendimento</p><h2 className="mt-1 text-2xl font-semibold">Fazer check-in</h2><p className="mt-2 text-muted-foreground">Use o código recebido na confirmação. A câmara só será solicitada quando escolher leitura QR.</p></div><div className="space-y-2"><Label htmlFor="checkin">Código de check-in</Label><Input id="checkin" value={credential} onChange={(event) => setCredential(event.target.value)} autoComplete="one-time-code" /></div>{checkInCommand.isError && <Failure message="Verifique o código e tente novamente." retry={() => checkInCommand.mutate()} />}<Button disabled={!credential.trim() || checkInCommand.isPending} onClick={() => checkInCommand.mutate()}>{checkInCommand.isPending ? 'A validar…' : 'Continuar'}</Button></section>;
+  else if (view === 'detail' && selected) body = <section className="mx-auto max-w-3xl space-y-6"><Button variant="ghost" onClick={() => setView('list')}><ArrowLeft className="mr-2 size-4" />Voltar</Button><div className="rounded-lg border bg-card p-5 tb:p-7"><div className="flex flex-wrap justify-between gap-3"><div><p className="text-sm text-muted-foreground">{selected.appointmentNumber}</p><h2 className="mt-1 text-2xl font-semibold">{selected.departmentName || 'Atendimento municipal'}</h2></div><Status value={selected.status} /></div><dl className="mt-6 grid gap-5 border-y py-5 xsm:grid-cols-2"><div><dt className="text-xs text-muted-foreground">Data e hora</dt><dd className="font-medium">{dateTime(selected.startTime)}</dd></div><div><dt className="text-xs text-muted-foreground">Motivo</dt><dd className="font-medium">{selected.reason || 'Não indicado'}</dd></div></dl>{selected.status === 'CONFIRMED' && <><div className="mt-6 flex flex-wrap gap-3"><Button onClick={() => setView('check-in')}>Fazer check-in</Button><Button variant="outline" disabled={!cancelReason.trim() || cancelCommand.isPending} onClick={() => cancelCommand.mutate()}>Cancelar agendamento</Button></div><div className="mt-5 space-y-2"><Label htmlFor="cancel">Motivo do cancelamento</Label><Textarea id="cancel" value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} /></div></>}{cancelCommand.isError && <div className="mt-4"><Failure message="O agendamento pode ter sido alterado. Atualize antes de repetir." retry={() => appointments.refetch()} /></div>}</div></section>;
+  else if (view === 'book') {
+    const slots = availability.data?.days.flatMap((item) => item.slots) || [];
+    body = <section className="space-y-6"><Button variant="ghost" onClick={() => setView('list')}><ArrowLeft className="mr-2 size-4" />Voltar</Button><div><p className="text-sm font-medium text-primary">Novo agendamento</p><h2 className="mt-1 text-2xl font-semibold">Escolha onde e quando pretende ser atendido</h2><p className="mt-2 max-w-2xl text-muted-foreground">A seleção é temporária até confirmar.</p></div><div className="grid gap-6 lg:grid-cols-[.9fr_1.1fr]"><div className="space-y-5 rounded-lg border bg-card p-5"><div className="space-y-2"><Label htmlFor="service">Serviço</Label><select id="service" className="min-h-11 w-full rounded-md border bg-background px-3 text-sm" value={serviceId} onChange={(event) => { setServiceId(event.target.value); setLocation(''); setSlot(null); setHold(null); }}><option value="">Selecione um serviço</option>{services.data?.filter((item) => item.availability === 'available').map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></div><div className="space-y-2"><Label htmlFor="location">Local</Label><select id="location" className="min-h-11 w-full rounded-md border bg-background px-3 text-sm" value={location} disabled={!service} onChange={(event) => { setLocation(event.target.value); setSlot(null); setHold(null); }}><option value="">Selecione um local</option>{service?.locations.map((item) => <option key={item} value={item}>{item}</option>)}</select></div><div className="space-y-2"><Label htmlFor="date">Data</Label><Input id="date" type="date" min={day(new Date())} value={date} onChange={(event) => { setDate(event.target.value); setSlot(null); setHold(null); }} /></div></div><div className="rounded-lg border bg-card p-5"><h3 className="font-semibold">Horários disponíveis</h3>{!serviceId || !location ? <p className="mt-3 text-sm text-muted-foreground">Selecione serviço e local.</p> : availability.isLoading ? <Skeleton className="mt-4 h-32" /> : availability.isError ? <div className="mt-4"><Failure message="Não foi possível consultar os horários." retry={() => availability.refetch()} /></div> : !slots.length ? <p className="mt-3 text-sm text-muted-foreground">Não há horários nesta data.</p> : <div className="mt-4 grid grid-cols-2 gap-3 xsm:grid-cols-3">{slots.map((item) => { const unavailable = item.availability !== 'AVAILABLE' || item.remainingCapacity < 1; const active = slot?.slotId === item.slotId; return <Button key={item.slotId} variant={active ? 'default' : 'outline'} disabled={unavailable || Boolean(hold)} aria-pressed={active} onClick={() => setSlot(item)}>{new Intl.DateTimeFormat('pt-MZ', { hour: '2-digit', minute: '2-digit' }).format(new Date(item.startsAt))}<span className="sr-only">{unavailable ? ', indisponível' : active ? ', selecionado' : ', disponível'}</span></Button>; })}</div>}{slot && !hold && <Button className="mt-6 w-full" disabled={holdCommand.isPending} onClick={() => holdCommand.mutate(slot.slotId)}>{holdCommand.isPending ? 'A reservar…' : 'Reservar este horário'}</Button>}{holdCommand.isError && <div className="mt-4"><Failure message="Este horário deixou de estar disponível." retry={() => availability.refetch()} /></div>}</div></div>{hold && slot && <div className="rounded-lg border border-primary/40 bg-card p-5 tb:p-6"><Countdown expiresAt={hold.expiresAt} expired={() => setExpired(true)} /><h3 className="mt-5 text-lg font-semibold">Rever antes de confirmar</h3><dl className="mt-4 grid gap-4 xsm:grid-cols-2"><div><dt className="text-xs text-muted-foreground">Serviço</dt><dd className="font-medium">{service?.title}</dd></div><div><dt className="text-xs text-muted-foreground">Local</dt><dd className="font-medium">{slot.locationName || location}</dd></div><div><dt className="text-xs text-muted-foreground">Data e hora</dt><dd className="font-medium">{dateTime(slot.startsAt)}</dd></div></dl><div className="mt-5 space-y-2"><Label htmlFor="reason">Motivo</Label><Textarea id="reason" value={reason} onChange={(event) => setReason(event.target.value)} /></div>{isExpired && <Alert variant="destructive" className="mt-4"><AlertCircle className="size-4" /><AlertTitle>Reserva expirada</AlertTitle><AlertDescription>Atualize os horários e selecione novamente.</AlertDescription></Alert>}<div className="mt-5 flex gap-3"><Button disabled={isExpired || !reason.trim() || confirmCommand.isPending} onClick={() => confirmCommand.mutate()}>{confirmCommand.isPending ? 'A confirmar…' : 'Confirmar agendamento'}</Button>{isExpired && <Button variant="outline" onClick={() => { setHold(null); setSlot(null); availability.refetch(); }}>Atualizar</Button>}</div>{confirmCommand.isError && <div className="mt-4"><Failure message="A reserva pode ter expirado. Atualize a disponibilidade." retry={() => availability.refetch()} /></div>}</div>}</section>;
+  } else body = <section className="space-y-8"><div className="flex flex-col gap-4 border-b pb-6 xsm:flex-row xsm:items-end xsm:justify-between"><div><p className="text-sm font-medium text-primary">Atendimento presencial</p><h2 className="mt-1 text-2xl font-semibold">Os seus agendamentos</h2><p className="mt-2 text-muted-foreground">Consulte, faça check-in ou marque um horário.</p></div><Button onClick={start}><CalendarDays className="mr-2 size-4" />Novo agendamento</Button></div>{appointments.isLoading ? <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-24" /></div> : appointments.isError ? <Failure message="Não foi possível carregar os agendamentos." retry={() => appointments.refetch()} /> : !grouped.future.length && !grouped.history.length ? <div className="rounded-lg border border-dashed p-8 text-center"><CalendarDays className="mx-auto size-8 text-muted-foreground" /><h3 className="mt-4 font-semibold">Ainda não tem agendamentos</h3><p className="mt-2 text-sm text-muted-foreground">Escolha um serviço municipal e encontre um horário.</p><Button className="mt-5" onClick={start}>Marcar atendimento</Button></div> : <div className="space-y-8">{[['Próximos', grouped.future], ['Histórico', grouped.history]].map(([title, raw]) => { const items = raw as Appointment[]; return items.length ? <div key={title as string}><h3 className="text-lg font-semibold">{title as string}</h3><div className="mt-3 divide-y rounded-lg border bg-card">{items.map((item) => <button key={item.id} className="flex min-h-20 w-full items-center justify-between gap-4 p-4 text-left hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset" onClick={() => open(item)}><div><p className="font-semibold">{item.departmentName || 'Atendimento municipal'}</p><p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground"><Clock3 className="size-4" />{dateTime(item.startTime)}</p></div><Status value={item.status} /></button>)}</div></div> : null; })}</div>}</section>;
+  return <CitizenLayout title="Agendamentos" subtitle="Marcação e fila digital"><div className="px-4 py-6 xsm:px-5 tb:px-6 lg:px-8">{body}</div></CitizenLayout>;
 }
