@@ -7,7 +7,12 @@ import mz.gov.boaneconecta.appointments.entity.AppointmentStatus;
 import mz.gov.boaneconecta.appointments.service.AppointmentService;
 import mz.gov.boaneconecta.appointments.service.AppointmentSlotMaterializationService;
 import mz.gov.boaneconecta.appointments.dto.SlotMaterializationResponse;
+import mz.gov.boaneconecta.appointments.dto.CheckInResponse;
+import mz.gov.boaneconecta.appointments.service.AppointmentCheckInService;
 import mz.gov.boaneconecta.core.response.ApiResponse;
+import mz.gov.boaneconecta.core.security.UserDetailsImpl;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,10 +33,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 public class AdminAppointmentController {
     private final AppointmentService appointmentService;
     private final AppointmentSlotMaterializationService materializationService;
+    private final AppointmentCheckInService checkInService;
 
-    public AdminAppointmentController(AppointmentService appointmentService, AppointmentSlotMaterializationService materializationService) {
+    public AdminAppointmentController(AppointmentService appointmentService, AppointmentSlotMaterializationService materializationService,
+            AppointmentCheckInService checkInService) {
         this.appointmentService = appointmentService;
         this.materializationService = materializationService;
+        this.checkInService = checkInService;
     }
 
     @PostMapping("/slots/materialize")
@@ -60,5 +68,13 @@ public class AdminAppointmentController {
             @PathVariable UUID id,
             @Valid @RequestBody ChangeAppointmentRequest request) {
         return ApiResponse.success("Appointment status updated", appointmentService.changeStatus(id, request));
+    }
+
+    @PostMapping("/{id}/check-in")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE')")
+    public ApiResponse<CheckInResponse> assistedCheckIn(@AuthenticationPrincipal UserDetailsImpl principal,
+            @PathVariable UUID id, @RequestHeader("Idempotency-Key") String idempotencyKey) {
+        return ApiResponse.success("Appointment checked in with staff assistance",
+                checkInService.assistedCheckIn(principal.getId(), id, idempotencyKey));
     }
 }
