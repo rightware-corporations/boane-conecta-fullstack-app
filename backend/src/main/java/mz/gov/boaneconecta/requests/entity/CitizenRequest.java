@@ -46,10 +46,12 @@ public class CitizenRequest {
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(nullable = false, length = 40)
     private RequestStatus status = RequestStatus.SUBMITTED;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(length = 30)
     private Priority priority = Priority.NORMAL;
 
