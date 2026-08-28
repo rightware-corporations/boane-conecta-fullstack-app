@@ -27,4 +27,6 @@ public interface RequestDraftRepository extends JpaRepository<RequestDraft, UUID
             MunicipalService service,
             List<RequestDraftStatus> statuses);
     List<RequestDraft> findByStatusInAndExpiresAtBefore(List<RequestDraftStatus> statuses, Instant now);
+    List<RequestDraft> findByCitizenUserAndStatusInOrderByUpdatedAtDesc(
+            User citizenUser, List<RequestDraftStatus> statuses);
 }
