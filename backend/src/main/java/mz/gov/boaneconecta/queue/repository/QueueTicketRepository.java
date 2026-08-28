@@ -30,6 +30,7 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, UUID> 
             @Param("businessDate") java.time.LocalDate businessDate);
     boolean existsByCalledDeskAndStatusIn(mz.gov.boaneconecta.queue.entity.QueueDesk desk,
             Collection<QueueTicketStatus> statuses);
+    boolean existsByQueueAndStatusIn(MunicipalQueue queue, Collection<QueueTicketStatus> statuses);
     List<QueueTicket> findByQueueIdAndStatusInOrderByCalledAtDesc(UUID queueId, Collection<QueueTicketStatus> statuses);
     @Query(value = """
         SELECT COUNT(*) FROM queue_tickets other
