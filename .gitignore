@@ -14,7 +14,7 @@ backend/.mvn/
 backend/mvnw
 backend/mvnw.cmd
 backend/*.log
-storage/
+/storage/
 
 # Frontend
 frontend/node_modules/
