@@ -61,6 +61,10 @@ management:
       probes:
         enabled: true
 
+appointments:
+  hold:
+    ttl: ${APPOINTMENT_HOLD_TTL:PT10M}
+
 ---
 spring:
   config:
