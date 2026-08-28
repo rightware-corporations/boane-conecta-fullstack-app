@@ -64,6 +64,8 @@ management:
 appointments:
   hold:
     ttl: ${APPOINTMENT_HOLD_TTL:PT10M}
+  cancellation:
+    cutoff: ${APPOINTMENT_CANCELLATION_CUTOFF:PT24H}
 
 ---
 spring:
