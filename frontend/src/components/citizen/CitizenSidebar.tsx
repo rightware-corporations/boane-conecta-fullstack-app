@@ -1,125 +1,70 @@
-import { useLocation, Link } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  User,
-  ClipboardList,
-  FileText,
-  Shield,
-  CreditCard,
-  Calendar,
-  Bell,
-  LogOut,
-  Home,
-} from 'lucide-react';
+import { Bell, CircleUserRound, ClipboardList, FileText, House, Landmark, LogOut } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+
+import { LogoImage } from '@/components/layout/Header';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
-import { LogoImage } from '@/components/layout/Header';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-} from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
-const menuItems = [
-  { title: 'Painel', url: '/municipe', icon: LayoutDashboard },
-  { title: 'Meu Perfil', url: '/municipe/perfil', icon: User },
-  { title: 'Meus Pedidos', url: '/municipe/pedidos', icon: ClipboardList },
-  { title: 'Documentos', url: '/municipe/documentos', icon: FileText },
-  { title: 'Licenças', url: '/municipe/licencas', icon: Shield },
-  { title: 'Pagamentos', url: '/municipe/pagamentos', icon: CreditCard },
-  { title: 'Agendamentos', url: '/municipe/agendamentos', icon: Calendar },
-  { title: 'Notificações', url: '/municipe/notificacoes', icon: Bell },
+const items = [
+  { label: 'Início', href: '/municipe', icon: House },
+  { label: 'Meus pedidos', href: '/municipe/pedidos', icon: ClipboardList },
+  { label: 'Documentos', href: '/municipe/documentos', icon: FileText },
+  { label: 'Notificações', href: '/municipe/notificacoes', icon: Bell },
+  { label: 'Conta', href: '/municipe/perfil', icon: CircleUserRound },
 ];
 
 export function CitizenSidebar() {
-  const location = useLocation();
+  const { pathname } = useLocation();
   const { user, profile, logout } = useAuth();
 
-  const isActive = (path: string) => location.pathname === path;
-
   return (
-    <Sidebar className="border-r border-border">
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <LogoImage className="h-10 w-10" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">Área do Munícipe</p>
-            <p className="text-xs text-muted-foreground truncate">Conselho de Boane</p>
-          </div>
+    <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-border bg-surface" aria-label="Área do munícipe">
+      <Link to="/municipe" className="flex min-h-20 items-center gap-3 border-b border-border px-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+        <LogoImage className="size-10" />
+        <span>
+          <span className="block text-sm font-semibold text-foreground">Área do Munícipe</span>
+          <span className="block text-xs text-muted-foreground">Município de Boane</span>
+        </span>
+      </Link>
+
+      <nav className="flex-1 px-3 py-5" aria-label="Navegação principal do munícipe">
+        <ul className="space-y-1">
+          {items.map(({ label, href, icon: Icon }) => {
+            const active = href === '/municipe' ? pathname === href : pathname.startsWith(href);
+            return (
+              <li key={href}>
+                <Link
+                  to={href}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors',
+                    active ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted',
+                  )}
+                >
+                  <Icon className="size-5" aria-hidden="true" />
+                  {label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="mt-6 border-t border-border pt-4">
+          <Link to="/servicos" className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-foreground hover:bg-muted">
+            <Landmark className="size-5" aria-hidden="true" />
+            Consultar serviços
+          </Link>
         </div>
-      </div>
+      </nav>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link
-                      to={item.url}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-                        isActive(item.url)
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted"
-                      )}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link
-                    to="/"
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-muted text-muted-foreground"
-                  >
-                    <Home className="h-5 w-5" />
-                    <span>Voltar ao Portal</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter className="border-t border-border p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-sm">
-            {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'M'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {profile?.full_name || 'Munícipe'}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-          </div>
-        </div>
-        <Button variant="outline" size="sm" className="w-full" onClick={logout}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Terminar Sessão
+      <div className="border-t border-border p-4">
+        <p className="truncate text-sm font-medium text-foreground">{profile?.full_name || 'Munícipe'}</p>
+        <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+        <Button variant="outline" size="sm" className="mt-3 w-full" onClick={logout}>
+          <LogOut className="mr-2 size-4" aria-hidden="true" />
+          Terminar sessão
         </Button>
-      </SidebarFooter>
-    </Sidebar>
+      </div>
+    </aside>
   );
 }
