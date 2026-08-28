@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { api } from '@/lib/api';
 
-import { cancelAppointment, checkIn, confirmHold, createHold, getAvailability } from './appointments.api';
+import { cancelAppointment, checkIn, confirmHold, createHold, getAvailability, rescheduleAppointment } from './appointments.api';
 
 vi.mock('@/lib/api', () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 
@@ -30,8 +30,15 @@ describe('appointments API', () => {
   });
 
   it('sends the appointment version during cancellation', async () => {
-    await cancelAppointment({ id: 'appointment-1', appointmentNumber: 'APT-1', slotId: 'slot-1', startTime: null, endTime: null, departmentName: null, reason: null, status: 'CONFIRMED', slotStatus: null, version: 4, createdAt: '', updatedAt: '' }, 'Imprevisto');
+    await cancelAppointment({ id: 'appointment-1', appointmentNumber: 'APT-1', slotId: 'slot-1', serviceId: 'service-1', serviceName: 'Certidão', locationCode: 'BOANE', locationName: 'Balcão', startTime: null, endTime: null, departmentName: null, reason: null, status: 'CONFIRMED', slotStatus: null, version: 4, createdAt: '', updatedAt: '' }, 'Imprevisto');
     expect(api.post).toHaveBeenCalledWith('/citizen/appointments/appointment-1/cancel', { reason: 'Imprevisto' }, { headers: { 'Idempotency-Key': 'command-id', 'If-Match': '4' } });
+  });
+
+  it('atomically reschedules with both appointment and hold versions', async () => {
+    const appointment = { id: 'appointment-1', appointmentNumber: 'APT-1', slotId: 'slot-1', serviceId: 'service-1', serviceName: 'Certidão', locationCode: 'BOANE', locationName: 'Balcão', startTime: null, endTime: null, departmentName: null, reason: null, status: 'CONFIRMED' as const, slotStatus: null, version: 4, createdAt: '', updatedAt: '' };
+    const hold = { holdId: 'hold-2', slotId: 'slot-2', expiresAt: '2026-08-28T12:00:00Z', version: 9 };
+    await rescheduleAppointment(appointment, hold);
+    expect(api.post).toHaveBeenCalledWith('/citizen/appointments/appointment-1/reschedule', { holdId: 'hold-2', holdVersion: 9 }, { headers: { 'Idempotency-Key': 'command-id', 'If-Match': '4' } });
   });
 
   it('does not request camera access for manual check-in', async () => {
