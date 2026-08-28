@@ -13,7 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -68,7 +68,7 @@ class AppointmentsIntegrationTest {
     }
 
     private AppointmentSlot createFutureSlot() {
-        LocalDateTime start = LocalDateTime.now().plusDays(3);
+        Instant start = Instant.now().plusSeconds(3 * 24 * 60 * 60);
         return appointmentSlotRepository.saveAndFlush(AppointmentSlot.builder()
                 .startTime(start)
                 .endTime(start.plusMinutes(30))
