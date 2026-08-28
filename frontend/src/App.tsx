@@ -37,6 +37,8 @@ const AdminProjectos = lazy(() => import("./pages/admin/AdminProjectos"));
 const AdminUtilizadores = lazy(() => import("./pages/admin/AdminUtilizadores"));
 const AdminPedidos = lazy(() => import("./pages/admin/AdminPedidos"));
 const AdminFilas = lazy(() => import("./pages/admin/AdminFilas"));
+const AdminAgenda = lazy(() => import("./pages/admin/AdminAgenda"));
+const AdminConfiguracaoFilas = lazy(() => import("./pages/admin/AdminConfiguracaoFilas"));
 const CitizenDashboard = lazy(() => import("./pages/citizen/CitizenDashboard"));
 const CitizenPerfil = lazy(() => import("./pages/citizen/CitizenPerfil"));
 const CitizenPedidos = lazy(() => import("./pages/citizen/CitizenPedidos"));
@@ -182,6 +184,8 @@ function AppRoutes() {
           }
         />
         <Route path="/admin/filas" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario', 'gestor']}><AdminFilas /></RoleGuard></ProtectedRoute>} />
+        <Route path="/admin/agenda" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario', 'gestor']}><AdminAgenda /></RoleGuard></ProtectedRoute>} />
+        <Route path="/admin/filas/configuracao" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin']}><AdminConfiguracaoFilas /></RoleGuard></ProtectedRoute>} />
         <Route path="/municipe/pedidos/:id" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}><CitizenPedidoDetalhe /></RoleGuard></ProtectedRoute>} />
         <Route
           path="/municipe/documentos"

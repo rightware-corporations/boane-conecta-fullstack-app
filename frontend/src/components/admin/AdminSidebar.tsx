@@ -1,5 +1,5 @@
 import { useLocation, Link } from 'react-router-dom';
-import { Newspaper, Briefcase, FolderKanban, Users, LayoutDashboard, LogOut, ClipboardList, Tickets } from 'lucide-react';
+import { Newspaper, Briefcase, FolderKanban, Users, LayoutDashboard, LogOut, ClipboardList, Tickets, CalendarClock, Settings2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { cn } from '@/lib/utils';
@@ -24,10 +24,12 @@ const menuItems = [
   { title: 'Projectos', url: '/admin/projectos', icon: FolderKanban },
   { title: 'Pedidos', url: '/admin/pedidos', icon: ClipboardList },
   { title: 'Filas', url: '/admin/filas', icon: Tickets },
+  { title: 'Agenda', url: '/admin/agenda', icon: CalendarClock },
 ];
 
 const adminItems = [
   { title: 'Utilizadores', url: '/admin/utilizadores', icon: Users },
+  { title: 'Configurar filas', url: '/admin/filas/configuracao', icon: Settings2 },
 ];
 
 export function AdminSidebar() {
