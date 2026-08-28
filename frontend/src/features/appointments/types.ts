@@ -11,6 +11,10 @@ export type Appointment = {
   id: string;
   appointmentNumber: string;
   slotId: string | null;
+  serviceId: string | null;
+  serviceName: string | null;
+  locationCode: string | null;
+  locationName: string | null;
   startTime: string | null;
   endTime: string | null;
   departmentName: string | null;
