@@ -71,7 +71,7 @@ class AppointmentsIntegrationTest {
         Instant start = Instant.now().plusSeconds(3 * 24 * 60 * 60);
         return appointmentSlotRepository.saveAndFlush(AppointmentSlot.builder()
                 .startTime(start)
-                .endTime(start.plusMinutes(30))
+                .endTime(start.plusSeconds(30 * 60))
                 .capacity(1)
                 .status(SlotStatus.AVAILABLE)
                 .build());
