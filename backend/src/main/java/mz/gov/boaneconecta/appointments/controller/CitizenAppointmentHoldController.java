@@ -3,6 +3,8 @@ package mz.gov.boaneconecta.appointments.controller;
 import jakarta.validation.Valid;
 import mz.gov.boaneconecta.appointments.dto.*;
 import mz.gov.boaneconecta.appointments.service.AppointmentHoldService;
+import mz.gov.boaneconecta.appointments.service.AppointmentConfirmationService;
+import mz.gov.boaneconecta.requests.draft.service.VersionHeaderParser;
 import mz.gov.boaneconecta.core.response.ApiResponse;
 import mz.gov.boaneconecta.core.security.UserDetailsImpl;
 import org.springframework.http.*;
@@ -15,7 +17,12 @@ import org.springframework.web.bind.annotation.*;
 @PreAuthorize("hasRole('CITIZEN')")
 public class CitizenAppointmentHoldController {
     private final AppointmentHoldService service;
-    public CitizenAppointmentHoldController(AppointmentHoldService service) { this.service = service; }
+    private final AppointmentConfirmationService confirmationService;
+    private final VersionHeaderParser versionHeaderParser;
+    public CitizenAppointmentHoldController(AppointmentHoldService service,
+            AppointmentConfirmationService confirmationService, VersionHeaderParser versionHeaderParser) {
+        this.service = service; this.confirmationService = confirmationService; this.versionHeaderParser = versionHeaderParser;
+    }
     @PostMapping
     public ResponseEntity<ApiResponse<AppointmentHoldResponse>> create(
             @AuthenticationPrincipal UserDetailsImpl principal,
@@ -23,5 +30,14 @@ public class CitizenAppointmentHoldController {
             @Valid @RequestBody CreateAppointmentHoldRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Appointment hold created",
                 service.create(principal.getId(), request.slotId(), idempotencyKey)));
+    }
+    @PostMapping("/{holdId}/confirm")
+    public ResponseEntity<ApiResponse<AppointmentConfirmationResponse>> confirm(
+            @AuthenticationPrincipal UserDetailsImpl principal, @PathVariable java.util.UUID holdId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey, @RequestHeader("If-Match") String ifMatch,
+            @Valid @RequestBody ConfirmAppointmentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Appointment confirmed",
+                confirmationService.confirm(principal.getId(), holdId, request.reason(), idempotencyKey,
+                        versionHeaderParser.parse(ifMatch))));
     }
 }
