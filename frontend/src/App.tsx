@@ -39,6 +39,7 @@ const AdminPedidos = lazy(() => import("./pages/admin/AdminPedidos"));
 const CitizenDashboard = lazy(() => import("./pages/citizen/CitizenDashboard"));
 const CitizenPerfil = lazy(() => import("./pages/citizen/CitizenPerfil"));
 const CitizenPedidos = lazy(() => import("./pages/citizen/CitizenPedidos"));
+const CitizenPedidoDetalhe = lazy(() => import("./pages/citizen/CitizenPedidoDetalhe"));
 const CitizenDocumentos = lazy(() => import("./pages/citizen/CitizenDocumentos"));
 const CitizenLicencas = lazy(() => import("./pages/citizen/CitizenLicencas"));
 const CitizenPagamentos = lazy(() => import("./pages/citizen/CitizenPagamentos"));
@@ -177,6 +178,7 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="/municipe/pedidos/:id" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}><CitizenPedidoDetalhe /></RoleGuard></ProtectedRoute>} />
         <Route
           path="/municipe/documentos"
           element={
