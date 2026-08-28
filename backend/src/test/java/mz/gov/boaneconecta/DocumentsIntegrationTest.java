@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import mz.gov.boaneconecta.documents.service.DocumentScanWorker;
 
 import java.util.UUID;
 
@@ -35,6 +36,9 @@ class DocumentsIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private DocumentScanWorker documentScanWorker;
+
     @Test
     void citizenDocumentLifecycleAndRequestAttachmentWork() throws Exception {
         String citizenToken = registerAndLogin(uniqueEmail());
@@ -46,7 +50,7 @@ class DocumentsIntegrationTest {
                         .header("Authorization", bearer(citizenToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.title").value("Identity document"))
-                .andExpect(jsonPath("$.data.status").value("ACTIVE"));
+                .andExpect(jsonPath("$.data.status").value("VALID"));
 
         mockMvc.perform(get("/api/v1/citizen/documents/{id}", documentId)
                         .header("Authorization", bearer(otherCitizenToken)))
@@ -134,6 +138,7 @@ class DocumentsIntegrationTest {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
+        documentScanWorker.scanBatch();
         return UUID.fromString(objectMapper.readTree(response).path("data").path("id").asText());
     }
 
