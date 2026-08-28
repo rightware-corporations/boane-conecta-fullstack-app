@@ -1,7 +1,9 @@
-import { ReactNode } from 'react';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import type { ReactNode } from 'react';
+import { Bell } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
 import { CitizenSidebar } from './CitizenSidebar';
-import { Menu } from 'lucide-react';
+import { CitizenShell } from '@/shells/citizen/CitizenShell';
 
 interface CitizenLayoutProps {
   children: ReactNode;
@@ -10,27 +12,27 @@ interface CitizenLayoutProps {
 }
 
 export function CitizenLayout({ children, title, subtitle }: CitizenLayoutProps) {
-  return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-muted/30">
-        <CitizenSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="h-14 sm:h-16 border-b border-border bg-background flex items-center justify-between px-3 sm:px-4 lg:px-6">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <SidebarTrigger className="lg:hidden">
-                <Menu className="h-5 w-5" />
-              </SidebarTrigger>
-              <div>
-                <h1 className="text-sm sm:text-lg font-semibold text-foreground">{title}</h1>
-                {subtitle && <p className="text-[11px] sm:text-sm text-muted-foreground">{subtitle}</p>}
-              </div>
-            </div>
-          </header>
-          <main className="flex-1 p-3 sm:p-4 lg:p-6">
-            {children}
-          </main>
+  const header = (
+    <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/90">
+      <div className="flex min-h-16 items-center justify-between gap-4 px-4 xsm:px-5 tb:px-6 lg:px-8">
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1>
+          {subtitle && <p className="truncate text-xs text-muted-foreground tb:text-sm">{subtitle}</p>}
         </div>
+        <Link
+          to="/municipe/notificacoes"
+          aria-label="Abrir notificações"
+          className="hidden min-h-11 min-w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground tb:flex"
+        >
+          <Bell className="size-5" aria-hidden="true" />
+        </Link>
       </div>
-    </SidebarProvider>
+    </header>
+  );
+
+  return (
+    <CitizenShell sidebar={<CitizenSidebar />} header={header}>
+      <div className="mx-auto w-full max-w-[1280px]">{children}</div>
+    </CitizenShell>
   );
 }
