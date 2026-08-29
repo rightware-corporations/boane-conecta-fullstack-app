@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from '@/lib/api';
-import { assistedCheckIn, changeQueueStatus, changeScheduleRuleStatus, createDesk, materializeAppointmentSlots } from './queue-admin.api';
+import { assistedCheckIn, assignQueueStaff, changeQueueStatus, changeScheduleRuleStatus, createDesk, createQueue, materializeAppointmentSlots } from './queue-admin.api';
 
-vi.mock('@/lib/api', () => ({ api: { get: vi.fn(), post: vi.fn() } }));
+vi.mock('@/lib/api', () => ({ api: { get: vi.fn(), post: vi.fn(), delete: vi.fn() } }));
 
 describe('queue administration API', () => {
   beforeEach(() => {
@@ -12,7 +12,7 @@ describe('queue administration API', () => {
   });
 
   it('uses optimistic concurrency for queue status changes', async () => {
-    const queue = { id: 'queue-1', name: 'Atendimento', locationCode: 'BOANE', departmentId: 'dep-1', serviceId: null, mode: 'HYBRID' as const, status: 'CLOSED' as const, version: 8, desks: [] };
+    const queue = { id: 'queue-1', name: 'Atendimento', locationCode: 'BOANE', departmentId: 'dep-1', serviceId: null, mode: 'HYBRID' as const, status: 'CLOSED' as const, version: 8, desks: [], staffUserIds: [] };
     await changeQueueStatus(queue, 'OPEN');
     expect(api.post).toHaveBeenCalledWith('/admin/queues/queue-1/status', { status: 'OPEN' }, { headers: { 'If-Match': '8' } });
   });
@@ -20,6 +20,13 @@ describe('queue administration API', () => {
   it('creates a desk inside the selected queue', async () => {
     await createDesk('queue-1', { code: 'B01', displayName: 'Balcão 1' });
     expect(api.post).toHaveBeenCalledWith('/admin/queues/queue-1/desks', { code: 'B01', displayName: 'Balcão 1' });
+  });
+
+  it('uses the canonical backend queue mode and explicit staff scope', async () => {
+    await createQueue({ name: 'Agenda', locationCode: 'BOANE', departmentId: 'dep-1', serviceId: 'service-1', mode: 'APPOINTMENT_REQUIRED' });
+    expect(api.post).toHaveBeenCalledWith('/admin/queues', { name: 'Agenda', locationCode: 'BOANE', departmentId: 'dep-1', serviceId: 'service-1', mode: 'APPOINTMENT_REQUIRED' });
+    await assignQueueStaff('queue-1', 'user-1');
+    expect(api.post).toHaveBeenCalledWith('/admin/queues/queue-1/staff-scopes', { userId: 'user-1' });
   });
 
   it('protects assisted check-in retries with idempotency', async () => {
