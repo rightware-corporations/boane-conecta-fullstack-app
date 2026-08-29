@@ -9,7 +9,7 @@ import mz.gov.boaneconecta.users.entity.User;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
@@ -34,18 +34,54 @@ public class Appointment {
     @JoinColumn(name = "slot_id")
     private AppointmentSlot slot;
 
+    @Column(name = "confirmed_at")
+    private Instant confirmedAt;
+
+    @Column(name = "check_in_code_hash", unique = true, length = 64)
+    private String checkInCodeHash;
+
+    @Column(name = "check_in_code_expires_at")
+    private Instant checkInCodeExpiresAt;
+
+    @Column(name = "check_in_code_consumed_at")
+    private Instant checkInCodeConsumedAt;
+
+    @Builder.Default
+    @Column(name = "check_in_failed_attempts", nullable = false)
+    private Integer checkInFailedAttempts = 0;
+
+    @Column(name = "check_in_method", length = 30)
+    private String checkInMethod;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "check_in_actor_user_id")
+    private User checkInActorUser;
+
+    @Column(name = "checked_in_at")
+    private Instant checkedInAt;
+
+    @Column(name = "cancelled_at")
+    private Instant cancelledAt;
+
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
+
     @Column(columnDefinition = "TEXT")
     private String reason;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
-    private AppointmentStatus status = AppointmentStatus.SCHEDULED;
+    @Builder.Default
+    private AppointmentStatus status = AppointmentStatus.CONFIRMED;
+
+    @Version
+    private Long version;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }

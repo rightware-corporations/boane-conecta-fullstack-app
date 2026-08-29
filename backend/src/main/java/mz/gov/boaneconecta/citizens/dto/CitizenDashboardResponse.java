@@ -23,7 +23,7 @@ public record CitizenDashboardResponse(
     public record RequestSummary(UUID id, String reference, String serviceTitle, String title,
                                  String status, String statusLabel, String nextAction,
                                  LocalDateTime submittedAt, LocalDateTime updatedAt) {}
-    public record AppointmentSummary(UUID id, String reference, String status, LocalDateTime startsAt,
+    public record AppointmentSummary(UUID id, String reference, String status, Instant startsAt,
                                      String departmentName) {}
     public record PaymentSummary(UUID id, String reference, BigDecimal amount, String currency,
                                  LocalDate dueDate, UUID requestId) {}

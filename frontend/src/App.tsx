@@ -36,6 +36,9 @@ const AdminServicos = lazy(() => import("./pages/admin/AdminServicos"));
 const AdminProjectos = lazy(() => import("./pages/admin/AdminProjectos"));
 const AdminUtilizadores = lazy(() => import("./pages/admin/AdminUtilizadores"));
 const AdminPedidos = lazy(() => import("./pages/admin/AdminPedidos"));
+const AdminFilas = lazy(() => import("./pages/admin/AdminFilas"));
+const AdminAgenda = lazy(() => import("./pages/admin/AdminAgenda"));
+const AdminConfiguracaoFilas = lazy(() => import("./pages/admin/AdminConfiguracaoFilas"));
 const CitizenDashboard = lazy(() => import("./pages/citizen/CitizenDashboard"));
 const CitizenPerfil = lazy(() => import("./pages/citizen/CitizenPerfil"));
 const CitizenPedidos = lazy(() => import("./pages/citizen/CitizenPedidos"));
@@ -46,6 +49,7 @@ const CitizenPagamentos = lazy(() => import("./pages/citizen/CitizenPagamentos")
 const CitizenAgendamentos = lazy(() => import("./pages/citizen/CitizenAgendamentos"));
 const CitizenNotificacoes = lazy(() => import("./pages/citizen/CitizenNotificacoes"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const PublicQueueDisplay = lazy(() => import("./features/queue-display/PublicQueueDisplay"));
 
 const queryClient = new QueryClient();
 
@@ -74,6 +78,7 @@ function AppRoutes() {
         <Route path="/servicos/pedidos" element={<ConsultarPedido />} />
         <Route path="/documentos" element={<Documentos />} />
         <Route path="/avisos" element={<Avisos />} />
+        <Route path="/filas/:queueId/display" element={<PublicQueueDisplay />} />
 
         {/* Auth route - only accessible when not logged in */}
         <Route
@@ -178,6 +183,9 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="/admin/filas" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario', 'gestor']}><AdminFilas /></RoleGuard></ProtectedRoute>} />
+        <Route path="/admin/agenda" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario', 'gestor']}><AdminAgenda /></RoleGuard></ProtectedRoute>} />
+        <Route path="/admin/filas/configuracao" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin']}><AdminConfiguracaoFilas /></RoleGuard></ProtectedRoute>} />
         <Route path="/municipe/pedidos/:id" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}><CitizenPedidoDetalhe /></RoleGuard></ProtectedRoute>} />
         <Route
           path="/municipe/documentos"
