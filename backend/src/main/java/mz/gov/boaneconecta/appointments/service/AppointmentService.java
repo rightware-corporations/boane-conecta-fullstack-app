@@ -42,21 +42,17 @@ public class AppointmentService {
     }
 
     @Transactional(readOnly = true)
-    public List<AppointmentResponse> listAdmin(AppointmentStatus status) {
-        List<Appointment> appointments = status == null
-                ? appointmentRepository.findAllByOrderByCreatedAtDesc()
-                : appointmentRepository.findByStatusOrderByCreatedAtDesc(status);
+    public List<AppointmentResponse> listAdmin(UUID actorId, AppointmentStatus status) {
+        User actor = requireUser(actorId);
+        List<Appointment> appointments = appointmentRepository.findScopedAgenda(actor, status);
         return appointments.stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
-    public AppointmentResponse getAdmin(UUID appointmentId) {
-        return toResponse(requireAppointment(appointmentId));
-    }
-
-    private Appointment requireAppointment(UUID appointmentId) {
-        return appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
+    public AppointmentResponse getAdmin(UUID actorId, UUID appointmentId) {
+        User actor = requireUser(actorId);
+        return toResponse(appointmentRepository.findScopedById(appointmentId, actor)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found")));
     }
 
     private User requireUser(UUID userId) {

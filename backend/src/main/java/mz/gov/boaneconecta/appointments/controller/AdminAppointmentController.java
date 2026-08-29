@@ -48,14 +48,15 @@ public class AdminAppointmentController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE')")
-    public ApiResponse<List<AppointmentResponse>> list(@RequestParam(required = false) AppointmentStatus status) {
-        return ApiResponse.success("Appointments retrieved", appointmentService.listAdmin(status));
+    public ApiResponse<List<AppointmentResponse>> list(@AuthenticationPrincipal UserDetailsImpl principal,
+            @RequestParam(required = false) AppointmentStatus status) {
+        return ApiResponse.success("Appointments retrieved", appointmentService.listAdmin(principal.getId(), status));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE')")
-    public ApiResponse<AppointmentResponse> get(@PathVariable UUID id) {
-        return ApiResponse.success("Appointment retrieved", appointmentService.getAdmin(id));
+    public ApiResponse<AppointmentResponse> get(@AuthenticationPrincipal UserDetailsImpl principal,@PathVariable UUID id) {
+        return ApiResponse.success("Appointment retrieved", appointmentService.getAdmin(principal.getId(), id));
     }
 
     @PostMapping("/{id}/check-in")
