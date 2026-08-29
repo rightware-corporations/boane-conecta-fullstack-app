@@ -14,6 +14,7 @@ import mz.gov.boaneconecta.users.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.AccessDeniedException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.time.*;
@@ -33,18 +34,21 @@ public class AppointmentCheckInService {
     private final Duration opensBefore;
     private final Duration lateTolerance;
     private final int maxFailedAttempts;
+    private final QueueStaffScopeRepository staffScopes;
 
     public AppointmentCheckInService(AppointmentRepository appointments, MunicipalQueueRepository queues,
             QueueTicketRepository tickets, QueueSequenceAllocator sequences,
             IdempotencyRecordRepository idempotency, UserRepository users, Clock clock,
             @Value("${appointments.check-in.opens-before:PT30M}") Duration opensBefore,
             @Value("${appointments.check-in.late-tolerance:PT15M}") Duration lateTolerance,
-            @Value("${appointments.check-in.max-failed-attempts:5}") int maxFailedAttempts) {
+            @Value("${appointments.check-in.max-failed-attempts:5}") int maxFailedAttempts,
+            QueueStaffScopeRepository staffScopes) {
         if (opensBefore.isNegative() || lateTolerance.isNegative() || maxFailedAttempts < 1)
             throw new IllegalArgumentException("Invalid appointment check-in policy");
         this.appointments = appointments; this.queues = queues; this.tickets = tickets;
         this.sequences = sequences; this.idempotency = idempotency; this.users = users; this.clock = clock;
         this.opensBefore = opensBefore; this.lateTolerance = lateTolerance; this.maxFailedAttempts = maxFailedAttempts;
+        this.staffScopes = staffScopes;
     }
 
     @Transactional(noRollbackFor = InvalidCheckInCredentialException.class)
@@ -68,8 +72,6 @@ public class AppointmentCheckInService {
             String credential, String key, String operation, boolean owned) {
         validateKey(key);
         String fingerprint = hash(appointmentId + ":" + method);
-        var previous = idempotency.findByCitizenUserAndOperationAndKeyHash(actor, operation, hash(key.trim()));
-        if (previous.isPresent()) return replay(previous.get(), fingerprint, citizen);
         Appointment appointment = owned
                 ? appointments.findOwnedByIdForUpdate(appointmentId, citizen)
                     .orElseThrow(() -> new ResourceNotFoundException("APPOINTMENT_NOT_FOUND"))
@@ -78,16 +80,22 @@ public class AppointmentCheckInService {
         if (appointment.getStatus() == AppointmentStatus.CHECKED_IN) {
             QueueTicket existing = tickets.findByAppointmentAndCitizenUser(appointment, citizen)
                     .orElseThrow(() -> new IllegalStateException("Checked-in appointment has no queue ticket"));
+            if (!owned && !staffScopes.existsByQueueAndStaffUser(existing.getQueue(), actor)) throw new AccessDeniedException("QUEUE_SCOPE_FORBIDDEN");
+            var previous = idempotency.findByCitizenUserAndOperationAndKeyHash(actor, operation, hash(key.trim()));
+            if (previous.isPresent()) return replay(previous.get(), fingerprint, citizen);
             return response(appointment, existing, true);
         }
+        var previous = idempotency.findByCitizenUserAndOperationAndKeyHash(actor, operation, hash(key.trim()));
+        if (previous.isPresent()) return replay(previous.get(), fingerprint, citizen);
         if (appointment.getStatus() != AppointmentStatus.CONFIRMED) throw new ResourceConflictException("APPOINTMENT_CANNOT_BE_CHECKED_IN");
         validateWindow(appointment);
         if (owned) validateCredential(appointment, credential);
 
+        MunicipalQueue queue = selectQueue(appointment);
+        if (!owned && !staffScopes.existsByQueueAndStaffUser(queue, actor)) throw new AccessDeniedException("QUEUE_SCOPE_FORBIDDEN");
         IdempotencyRecord claim = idempotency.saveAndFlush(IdempotencyRecord.builder().id(UUID.randomUUID())
                 .citizenUser(actor).operation(operation).keyHash(hash(key.trim())).requestFingerprint(fingerprint)
                 .state(IdempotencyState.IN_PROGRESS).expiresAt(clock.instant().plus(Duration.ofDays(7))).build());
-        MunicipalQueue queue = selectQueue(appointment);
         LocalDate businessDate = LocalDate.now(clock);
         int sequence = sequences.next(queue.getId(), businessDate);
         QueueTicket ticket = tickets.saveAndFlush(QueueTicket.builder().ticketNumber("A%03d".formatted(sequence))

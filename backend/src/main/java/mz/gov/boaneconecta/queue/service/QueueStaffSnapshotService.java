@@ -10,6 +10,9 @@ import org.springframework.data.domain.Sort;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.*;
+import mz.gov.boaneconecta.users.entity.User;
+import mz.gov.boaneconecta.users.repository.UserRepository;
+import org.springframework.security.access.AccessDeniedException;
 
 @Service
 public class QueueStaffSnapshotService {
@@ -19,21 +22,34 @@ public class QueueStaffSnapshotService {
     private final QueueTicketRepository tickets;
     private final ServiceSessionRepository sessions;
     private final Clock clock;
+    private final QueueStaffScopeRepository staffScopes;
+    private final UserRepository users;
 
     public QueueStaffSnapshotService(MunicipalQueueRepository queues, QueueDeskRepository desks,
-            QueueTicketRepository tickets, ServiceSessionRepository sessions, Clock clock) {
+            QueueTicketRepository tickets, ServiceSessionRepository sessions, Clock clock,
+            QueueStaffScopeRepository staffScopes, UserRepository users) {
         this.queues = queues; this.desks = desks; this.tickets = tickets; this.sessions = sessions; this.clock = clock;
+        this.staffScopes = staffScopes; this.users = users;
     }
 
     @Transactional(readOnly = true)
-    public List<QueueStaffSnapshotResponse> list() {
-        return queues.findAll(Sort.by(Sort.Direction.ASC, "name")).stream().map(queue -> get(queue.getId())).toList();
+    public List<QueueStaffSnapshotResponse> list(UUID actorId) {
+        User actor = user(actorId);
+        Set<UUID> allowed = staffScopes.findByStaffUserOrderByCreatedAtAsc(actor).stream().map(scope -> scope.getQueue().getId()).collect(java.util.stream.Collectors.toSet());
+        return queues.findAll(Sort.by(Sort.Direction.ASC, "name")).stream().filter(queue -> allowed.contains(queue.getId())).map(this::snapshot).toList();
     }
 
     @Transactional(readOnly = true)
-    public QueueStaffSnapshotResponse get(UUID queueId) {
+    public QueueStaffSnapshotResponse get(UUID actorId, UUID queueId) {
+        User actor = user(actorId);
         MunicipalQueue queue = queues.findById(queueId)
                 .orElseThrow(() -> new ResourceNotFoundException("QUEUE_NOT_FOUND"));
+        if (!staffScopes.existsByQueueAndStaffUser(queue, actor)) throw new AccessDeniedException("QUEUE_SCOPE_FORBIDDEN");
+        return snapshot(queue);
+    }
+
+    private QueueStaffSnapshotResponse snapshot(MunicipalQueue queue) {
+        UUID queueId = queue.getId();
         Map<UUID, QueueTicket> activeByDesk = new HashMap<>();
         tickets.findByQueueIdAndStatusInOrderByCalledAtDesc(queueId, ACTIVE).forEach(ticket -> {
             if (ticket.getCalledDesk() != null) activeByDesk.putIfAbsent(ticket.getCalledDesk().getId(), ticket);
@@ -49,6 +65,8 @@ public class QueueStaffSnapshotService {
         return new QueueStaffSnapshotResponse(queue.getId(), queue.getName(), queue.getLocationCode(), queue.getStatus(),
                 clock.instant(), deskItems, waiting);
     }
+
+    private User user(UUID id) { return users.findById(id).orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND")); }
 
     private QueueStaffSnapshotResponse.Ticket ticket(QueueTicket ticket) {
         if (ticket == null) return null;

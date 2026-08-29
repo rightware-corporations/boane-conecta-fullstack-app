@@ -28,9 +28,10 @@ class AppointmentCheckInServiceTest {
     private final QueueSequenceAllocator sequences = mock(QueueSequenceAllocator.class);
     private final IdempotencyRecordRepository idempotency = mock(IdempotencyRecordRepository.class);
     private final UserRepository users = mock(UserRepository.class);
+    private final QueueStaffScopeRepository scopes = mock(QueueStaffScopeRepository.class);
     private final Clock clock = Clock.fixed(Instant.parse("2026-09-01T08:00:00Z"), ZoneId.of("Africa/Maputo"));
     private final AppointmentCheckInService service = new AppointmentCheckInService(appointments, queues, tickets,
-            sequences, idempotency, users, clock, Duration.ofMinutes(30), Duration.ofMinutes(15), 5);
+            sequences, idempotency, users, clock, Duration.ofMinutes(30), Duration.ofMinutes(15), 5, scopes);
 
     @Test void validCredentialAtomicallyCreatesWaitingTicketAndConsumesCredential() {
         String credential = "opaque-high-entropy-value";

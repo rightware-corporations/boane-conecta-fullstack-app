@@ -23,13 +23,13 @@ public class AdminQueueOperationsController {
     }
 
     @GetMapping("/queues/snapshots")
-    public ApiResponse<List<QueueStaffSnapshotResponse>> snapshots() {
-        return ApiResponse.success("Queue operational snapshots retrieved", snapshots.list());
+    public ApiResponse<List<QueueStaffSnapshotResponse>> snapshots(@AuthenticationPrincipal UserDetailsImpl actor) {
+        return ApiResponse.success("Queue operational snapshots retrieved", snapshots.list(actor.getId()));
     }
 
     @GetMapping("/queues/{queueId}/snapshot")
-    public ApiResponse<QueueStaffSnapshotResponse> snapshot(@PathVariable UUID queueId) {
-        return ApiResponse.success("Queue operational snapshot retrieved", snapshots.get(queueId));
+    public ApiResponse<QueueStaffSnapshotResponse> snapshot(@AuthenticationPrincipal UserDetailsImpl actor,@PathVariable UUID queueId) {
+        return ApiResponse.success("Queue operational snapshot retrieved", snapshots.get(actor.getId(),queueId));
     }
 
     @PostMapping("/queues/{queueId}/desks/{deskId}/open")

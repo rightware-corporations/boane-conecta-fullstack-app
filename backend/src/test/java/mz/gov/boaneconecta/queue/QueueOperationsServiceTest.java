@@ -12,6 +12,7 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.springframework.security.access.AccessDeniedException;
 
 class QueueOperationsServiceTest {
     private final MunicipalQueueRepository queues=mock(MunicipalQueueRepository.class);
@@ -22,8 +23,9 @@ class QueueOperationsServiceTest {
     private final QueueSequenceAllocator sequences=mock(QueueSequenceAllocator.class);
     private final IdempotencyRecordRepository idempotency=mock(IdempotencyRecordRepository.class);
     private final UserRepository users=mock(UserRepository.class);
+    private final QueueStaffScopeRepository scopes=mock(QueueStaffScopeRepository.class);
     private final Clock clock=Clock.fixed(Instant.parse("2026-09-01T08:00:00Z"),ZoneId.of("Africa/Maputo"));
-    private final QueueOperationsService service=new QueueOperationsService(queues,desks,tickets,sessions,events,sequences,idempotency,users,clock);
+    private final QueueOperationsService service=new QueueOperationsService(queues,desks,tickets,sessions,events,sequences,idempotency,users,clock,scopes);
 
     @Test void callNextSelectsTicketOnlyOnBackendAndAssignsCurrentDesk(){
         Fixture f=fixture(); QueueTicket waiting=QueueTicket.builder().id(UUID.randomUUID()).queue(f.queue)
@@ -35,6 +37,13 @@ class QueueOperationsServiceTest {
         assertThat(waiting.getStatus()).isEqualTo(QueueTicketStatus.CALLED);
         assertThat(waiting.getCalledDesk()).isSameAs(f.desk);
         verify(events).save(argThat(event->event.getEventType().equals("TICKET_CALLED")));
+    }
+
+    @Test void refusesQueueOperationsOutsideExplicitStaffScope(){
+        Fixture f=fixture();when(scopes.existsByQueueAndStaffUser(f.queue,f.staff)).thenReturn(false);
+        assertThatThrownBy(()->service.openDesk(f.staff.getId(),f.queue.getId(),f.desk.getId()))
+                .isInstanceOf(AccessDeniedException.class).hasMessage("QUEUE_SCOPE_FORBIDDEN");
+        verify(desks,never()).saveAndFlush(any());
     }
 
     @Test void startAndCompleteServiceKeepDeskTicketAndSessionConsistent(){
@@ -59,6 +68,7 @@ class QueueOperationsServiceTest {
             .id(UUID.randomUUID()).name("Queue").locationCode("BOANE").status(QueueStatus.OPEN).build(); QueueDesk desk=QueueDesk.builder()
             .id(UUID.randomUUID()).queue(queue).displayName("Balcão 1").code("B1").status(QueueDeskStatus.OPEN).currentStaffUser(staff).build();
         when(users.findById(staff.getId())).thenReturn(Optional.of(staff));when(queues.findByIdForUpdate(queue.getId())).thenReturn(Optional.of(queue));
+        when(scopes.existsByQueueAndStaffUser(queue,staff)).thenReturn(true);
         when(desks.findByQueueForUpdate(queue.getId(),desk.getId())).thenReturn(Optional.of(desk));return new Fixture(staff,queue,desk);}
     private record Fixture(User staff,MunicipalQueue queue,QueueDesk desk){}
 }

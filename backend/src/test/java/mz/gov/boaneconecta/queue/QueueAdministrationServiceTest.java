@@ -9,6 +9,8 @@ import mz.gov.boaneconecta.queue.dto.*;
 import mz.gov.boaneconecta.queue.entity.*;
 import mz.gov.boaneconecta.queue.repository.*;
 import mz.gov.boaneconecta.queue.service.QueueAdministrationService;
+import mz.gov.boaneconecta.roles.repository.UserRoleRepository;
+import mz.gov.boaneconecta.users.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.assertj.core.api.Assertions.*;
@@ -19,7 +21,9 @@ class QueueAdministrationServiceTest {
     private final MunicipalQueueRepository queues=mock(MunicipalQueueRepository.class);private final QueueDeskRepository desks=mock(QueueDeskRepository.class);
     private final QueueTicketRepository tickets=mock(QueueTicketRepository.class);private final DepartmentRepository departments=mock(DepartmentRepository.class);
     private final MunicipalServiceRepository services=mock(MunicipalServiceRepository.class);
-    private final QueueAdministrationService service=new QueueAdministrationService(queues,desks,tickets,departments,services);
+    private final QueueStaffScopeRepository scopes=mock(QueueStaffScopeRepository.class);private final UserRepository users=mock(UserRepository.class);
+    private final UserRoleRepository userRoles=mock(UserRoleRepository.class);
+    private final QueueAdministrationService service=new QueueAdministrationService(queues,desks,tickets,departments,services,scopes,users,userRoles);
 
     @Test void createsQueueClosedAndNormalizesOperationalCodes(){Department department=Department.builder().id(UUID.randomUUID()).build();
         MunicipalService municipal=MunicipalService.builder().id(UUID.randomUUID()).department(department).build();when(departments.findById(department.getId())).thenReturn(Optional.of(department));

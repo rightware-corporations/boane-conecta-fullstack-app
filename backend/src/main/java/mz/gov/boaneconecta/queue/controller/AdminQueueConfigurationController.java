@@ -15,10 +15,13 @@ public class AdminQueueConfigurationController {
     private final QueueAdministrationService service;private final VersionHeaderParser versions;
     public AdminQueueConfigurationController(QueueAdministrationService service,VersionHeaderParser versions){this.service=service;this.versions=versions;}
     @GetMapping public ApiResponse<List<QueueAdminResponse>> list(){return ApiResponse.success("Queues retrieved",service.list());}
+    @GetMapping("/staff-options") public ApiResponse<List<QueueStaffOptionResponse>> staffOptions(){return ApiResponse.success("Queue staff options retrieved",service.staffOptions());}
     @GetMapping("/{id}") public ApiResponse<QueueAdminResponse> get(@PathVariable UUID id){return ApiResponse.success("Queue retrieved",service.get(id));}
     @PostMapping public ApiResponse<QueueAdminResponse> create(@Valid @RequestBody CreateQueueRequest request){return ApiResponse.success("Queue created",service.create(request));}
     @PutMapping("/{id}") public ApiResponse<QueueAdminResponse> update(@PathVariable UUID id,@RequestHeader("If-Match") String match,@Valid @RequestBody UpdateQueueRequest request){return ApiResponse.success("Queue updated",service.update(id,versions.parse(match),request));}
     @PostMapping("/{id}/status") public ApiResponse<QueueAdminResponse> status(@PathVariable UUID id,@RequestHeader("If-Match") String match,@Valid @RequestBody QueueStatusRequest request){return ApiResponse.success("Queue status updated",service.changeStatus(id,versions.parse(match),request.status()));}
     @PostMapping("/{id}/desks") public ApiResponse<QueueAdminResponse> createDesk(@PathVariable UUID id,@Valid @RequestBody CreateQueueDeskRequest request){return ApiResponse.success("Queue desk created",service.createDesk(id,request));}
     @PutMapping("/{id}/desks/{deskId}") public ApiResponse<QueueAdminResponse> updateDesk(@PathVariable UUID id,@PathVariable UUID deskId,@RequestHeader("If-Match") String match,@Valid @RequestBody UpdateQueueDeskRequest request){return ApiResponse.success("Queue desk updated",service.updateDesk(id,deskId,versions.parse(match),request));}
+    @PostMapping("/{id}/staff-scopes") public ApiResponse<QueueAdminResponse> assignStaff(@PathVariable UUID id,@Valid @RequestBody QueueStaffScopeRequest request){return ApiResponse.success("Queue staff scope assigned",service.assignStaff(id,request.userId()));}
+    @DeleteMapping("/{id}/staff-scopes/{userId}") public ApiResponse<QueueAdminResponse> revokeStaff(@PathVariable UUID id,@PathVariable UUID userId){return ApiResponse.success("Queue staff scope revoked",service.revokeStaff(id,userId));}
 }
