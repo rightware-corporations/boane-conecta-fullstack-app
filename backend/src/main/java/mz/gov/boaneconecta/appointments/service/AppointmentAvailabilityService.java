@@ -31,13 +31,14 @@ public class AppointmentAvailabilityService {
         Instant fromTime = from.atStartOfDay(zone).toInstant();
         Instant toTime = to.plusDays(1).atStartOfDay(zone).toInstant();
         Map<LocalDate, List<AppointmentAvailabilityResponse.AvailabilitySlot>> grouped = new LinkedHashMap<>();
-        slots.findAvailability(service.getId(), locationCode.trim(), fromTime, toTime, clock.instant()).forEach(row -> {
+        String normalizedLocation = locationCode.trim().toUpperCase(Locale.ROOT);
+        slots.findAvailability(service.getId(), normalizedLocation, fromTime, toTime, clock.instant()).forEach(row -> {
             LocalDate date = row.getStartsAt().atZone(zone).toLocalDate();
             grouped.computeIfAbsent(date, ignored -> new ArrayList<>()).add(new AppointmentAvailabilityResponse.AvailabilitySlot(
                     row.getSlotId(), row.getStartsAt(), row.getEndsAt(), row.getLocationName(), Math.toIntExact(row.getRemainingCapacity()),
                     row.getRemainingCapacity() > 0 ? "AVAILABLE" : "UNAVAILABLE"));
         });
-        return new AppointmentAvailabilityResponse(serviceId, locationCode.trim(), grouped.entrySet().stream()
+        return new AppointmentAvailabilityResponse(serviceId, normalizedLocation, grouped.entrySet().stream()
                 .map(entry -> new AppointmentAvailabilityResponse.AvailabilityDay(entry.getKey(), List.copyOf(entry.getValue()))).toList());
     }
 }

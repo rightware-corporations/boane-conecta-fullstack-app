@@ -39,6 +39,8 @@ F5 implements citizen appointment booking, appointment lifecycle, assisted and Q
 
 - Citizen identity is derived from the authenticated principal and never accepted from the UI.
 - Configuration requires `ADMIN` or `SUPER_ADMIN`; staff operations use explicitly authorized operational roles.
+- Operational roles do not grant municipality-wide queue access: every staff member requires an explicit queue scope, managed by an administrator.
+- Snapshot, desk, ticket, transfer and assisted check-in operations enforce queue scope on the backend; transfer requires both source and destination scope.
 - Mutable configuration commands require `If-Match` optimistic concurrency.
 - Capacity and queue command paths use database locks where concurrent decisions affect the same aggregate.
 - Retry-sensitive commands use idempotency keys.
