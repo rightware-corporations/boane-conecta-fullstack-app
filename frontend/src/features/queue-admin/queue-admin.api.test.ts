@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from '@/lib/api';
-import { assistedCheckIn, changeQueueStatus, createDesk } from './queue-admin.api';
+import { assistedCheckIn, changeQueueStatus, changeScheduleRuleStatus, createDesk, materializeAppointmentSlots } from './queue-admin.api';
 
 vi.mock('@/lib/api', () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 
@@ -25,5 +25,16 @@ describe('queue administration API', () => {
   it('protects assisted check-in retries with idempotency', async () => {
     await assistedCheckIn('appointment-1');
     expect(api.post).toHaveBeenCalledWith('/admin/appointments/appointment-1/check-in', undefined, { headers: { 'Idempotency-Key': 'assisted-key' } });
+  });
+
+  it('uses optimistic concurrency for schedule rule transitions', async () => {
+    const rule = { id: 'rule-1', serviceId: 'service-1', serviceTitle: 'Licença', departmentId: 'dep-1', departmentName: 'Urbanização', locationCode: 'BOANE', dayOfWeek: 'MONDAY', startLocalTime: '08:00', endLocalTime: '12:00', slotDurationMinutes: 30, capacityPerSlot: 2, effectiveFrom: '2026-09-01', effectiveUntil: null, status: 'DRAFT' as const, version: 4 };
+    await changeScheduleRuleStatus(rule, 'ACTIVE');
+    expect(api.post).toHaveBeenCalledWith('/admin/appointment-schedule-rules/rule-1/status', { status: 'ACTIVE' }, { headers: { 'If-Match': '4' } });
+  });
+
+  it('encodes the slot materialization period in the request', async () => {
+    await materializeAppointmentSlots('2026-09-01', '2026-09-30');
+    expect(api.post).toHaveBeenCalledWith('/admin/appointments/slots/materialize?from=2026-09-01&to=2026-09-30');
   });
 });
