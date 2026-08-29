@@ -1,7 +1,6 @@
 package mz.gov.boaneconecta.appointments.controller;
 
 import mz.gov.boaneconecta.appointments.dto.AppointmentResponse;
-import mz.gov.boaneconecta.appointments.dto.AppointmentSlotResponse;
 import mz.gov.boaneconecta.appointments.service.AppointmentService;
 import mz.gov.boaneconecta.appointments.service.AppointmentAvailabilityService;
 import mz.gov.boaneconecta.appointments.dto.AppointmentAvailabilityResponse;
@@ -55,11 +54,6 @@ public class CitizenAppointmentController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ApiResponse.success("Appointment availability retrieved", availabilityService.find(serviceId, locationCode, from, to));
-    }
-
-    @GetMapping("/slots")
-    public ApiResponse<List<AppointmentSlotResponse>> availableSlots() {
-        return ApiResponse.success("Appointment slots retrieved", appointmentService.listAvailableSlots());
     }
 
     @GetMapping

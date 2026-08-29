@@ -21,8 +21,7 @@ public class QueueProjectionService {
     public CitizenQueueTicketResponse citizen(UUID citizenId,UUID ticketId){var citizen=users.findById(citizenId).orElseThrow(()->new ResourceNotFoundException("User not found"));
         QueueTicket ticket=tickets.findByIdAndCitizenUser(ticketId,citizen).orElseThrow(()->new ResourceNotFoundException("QUEUE_TICKET_NOT_FOUND"));
         long ahead=ticket.getStatus()==QueueTicketStatus.WAITING?tickets.countAhead(ticket.getQueue().getId(),ticket.getBusinessDate(),rank(ticket.getPriorityClass()),ticket.getSequenceNumber()):0;
-        List<String> actions=ticket.getStatus()==QueueTicketStatus.WAITING?List.of("LEAVE_QUEUE"):List.of();
         return new CitizenQueueTicketResponse(ticket.getId(),ticket.getTicketNumber(),ticket.getStatus(),ahead,
-                ticket.getCalledDesk()==null?null:ticket.getCalledDesk().getDisplayName(),ticket.getQueue().getLocationCode(),ticket.getUpdatedAt(),actions);}
+                ticket.getCalledDesk()==null?null:ticket.getCalledDesk().getDisplayName(),ticket.getQueue().getLocationCode(),ticket.getUpdatedAt(),List.of());}
     private int rank(QueuePriorityClass priority){return switch(priority){case SPECIAL_OPERATIONAL->0;case PRIORITY_ELIGIBLE->1;case NORMAL->2;};}
 }

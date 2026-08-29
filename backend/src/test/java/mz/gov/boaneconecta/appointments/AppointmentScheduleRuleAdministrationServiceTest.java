@@ -30,7 +30,7 @@ class AppointmentScheduleRuleAdministrationServiceTest {
         department = Department.builder().id(UUID.randomUUID()).name("Atendimento").build();
         service = MunicipalService.builder().id(UUID.randomUUID()).title("Licenciamento").department(department).build();
         when(departments.findById(department.getId())).thenReturn(Optional.of(department));
-        when(services.findById(service.getId())).thenReturn(Optional.of(service));
+        when(services.findByIdForUpdate(service.getId())).thenReturn(Optional.of(service));
         when(rules.findByServiceIdAndLocationCodeIgnoreCaseAndDayOfWeekAndStatusNot(any(), any(), any(), any())).thenReturn(List.of());
         when(rules.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }

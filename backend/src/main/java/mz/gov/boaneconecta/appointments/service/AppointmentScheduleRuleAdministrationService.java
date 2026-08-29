@@ -93,7 +93,7 @@ public class AppointmentScheduleRuleAdministrationService {
             r.getService().getId(), r.getDepartment().getId(), r.getLocationCode(), r.getDayOfWeek(), r.getStartLocalTime(),
             r.getEndLocalTime(), r.getSlotDurationMinutes(), r.getCapacityPerSlot(), r.getEffectiveFrom(), r.getEffectiveUntil()); }
     private AppointmentScheduleRule locked(UUID id) { return rules.findByIdForUpdate(id).orElseThrow(() -> new ResourceNotFoundException("SCHEDULE_RULE_NOT_FOUND")); }
-    private MunicipalService service(UUID id) { return services.findById(id).orElseThrow(() -> new ResourceNotFoundException("SERVICE_NOT_FOUND")); }
+    private MunicipalService service(UUID id) { return services.findByIdForUpdate(id).orElseThrow(() -> new ResourceNotFoundException("SERVICE_NOT_FOUND")); }
     private Department department(UUID id) { return departments.findById(id).orElseThrow(() -> new ResourceNotFoundException("DEPARTMENT_NOT_FOUND")); }
     private void requireVersion(AppointmentScheduleRule rule, long expected) { if (!Objects.equals(rule.getVersion(), expected)) throw new ResourceConflictException("SCHEDULE_RULE_VERSION_MISMATCH"); }
     private String code(String value) { return value.trim().toUpperCase(Locale.ROOT); }

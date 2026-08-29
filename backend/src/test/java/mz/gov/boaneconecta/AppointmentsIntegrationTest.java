@@ -17,7 +17,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,7 +34,6 @@ class AppointmentsIntegrationTest {
     @Test
     void appointmentWorkflowWorks() throws Exception {
         String citizenToken = registerAndLogin(uniqueEmail("appointment"));
-        String adminToken = login("admin@boane.gov.mz", "ChangeMe123!").path("data").path("accessToken").asText();
         AppointmentSlot slot = createFutureSlot();
 
         JsonNode held = objectMapper.readTree(mockMvc.perform(post("/api/v1/citizen/appointment-holds")
@@ -65,21 +63,24 @@ class AppointmentsIntegrationTest {
                 .andExpect(jsonPath("$.data.availableActions[0]").value("CANCEL"))
                 .andReturn().getResponse().getContentAsString());
         String appointmentId = confirmed.path("data").path("appointmentId").asText();
+        long appointmentVersion = confirmed.path("data").path("version").asLong();
 
         mockMvc.perform(get("/api/v1/citizen/appointments")
                         .header("Authorization", "Bearer " + citizenToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].id").value(appointmentId));
 
-        mockMvc.perform(patch("/api/v1/admin/appointments/{id}/status", appointmentId)
-                        .header("Authorization", "Bearer " + adminToken)
+        mockMvc.perform(post("/api/v1/citizen/appointments/{id}/cancel", appointmentId)
+                        .header("Authorization", "Bearer " + citizenToken)
+                        .header("Idempotency-Key", "cancel-" + UUID.randomUUID())
+                        .header("If-Match", "\"" + appointmentVersion + "\"")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"status":"COMPLETED"}
+                                {"reason":"Planos alterados"}
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status").value("COMPLETED"))
-                .andExpect(jsonPath("$.data.slotStatus").value("BLOCKED"));
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"))
+                .andExpect(jsonPath("$.data.availableActions").isEmpty());
     }
 
     private AppointmentSlot createFutureSlot() {

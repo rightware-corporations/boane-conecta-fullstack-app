@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 public interface AppointmentScheduleRuleRepository extends JpaRepository<AppointmentScheduleRule, UUID> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<AppointmentScheduleRule> findByStatusAndEffectiveFromLessThanEqualAndEffectiveUntilIsNullOrStatusAndEffectiveFromLessThanEqualAndEffectiveUntilGreaterThanEqual(
             ScheduleRuleStatus statusOpen, LocalDate toOpen, ScheduleRuleStatus statusBounded, LocalDate toBounded, LocalDate fromBounded);
     List<AppointmentScheduleRule> findAllByOrderByEffectiveFromDescDayOfWeekAscStartLocalTimeAsc();
