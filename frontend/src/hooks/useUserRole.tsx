@@ -21,6 +21,7 @@ export function useUserRole() {
   // Module-specific permissions
   const canManageNews = hasPermission('admin.news.manage');
   const canManageServices = hasPermission('admin.services.manage');
+  const canReadServices = hasPermission('admin.services.read');
   const canManageProjects = hasPermission('admin.projects.manage');
   const canManageUsers = hasPermission('admin.users.manage');
   const canManageRequests = hasPermission('admin.requests.manage');
@@ -77,6 +78,7 @@ export function useUserRole() {
     hasPermission,
     canManageNews,
     canManageServices,
+    canReadServices,
     canManageProjects,
     canManageUsers,
     canManageRequests,

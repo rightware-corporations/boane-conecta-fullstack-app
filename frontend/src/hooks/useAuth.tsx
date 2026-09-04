@@ -6,10 +6,10 @@ import type { UserRole, LoginCredentials, RegisterData, Profile, User } from '@/
 
 const permissionsByRole: Record<UserRole, string[]> = {
   super_admin: ['*'],
-  admin: ['admin.dashboard.view', 'admin.users.manage', 'admin.services.manage', 'admin.requests.manage', 'admin.reports.view'],
+  admin: ['admin.dashboard.view', 'admin.users.manage', 'admin.services.read', 'admin.services.manage', 'admin.requests.manage', 'admin.reports.view'],
   editor: ['admin.dashboard.view', 'admin.news.manage', 'admin.announcements.manage'],
-  funcionario: ['admin.dashboard.view', 'admin.services.manage', 'admin.requests.manage'],
-  gestor: ['admin.dashboard.view', 'admin.projects.manage', 'admin.reports.view'],
+  funcionario: ['admin.dashboard.view', 'admin.requests.manage'],
+  gestor: ['admin.dashboard.view', 'admin.services.read', 'admin.projects.manage', 'admin.reports.view'],
   municipe: ['citizen.profile.view', 'citizen.profile.edit', 'citizen.requests.view', 'citizen.requests.create', 'citizen.payments.view', 'citizen.documents.view', 'citizen.documents.upload'],
 };
 

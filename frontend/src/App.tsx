@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
+import { ADMIN_SERVICES_READ_ROLES } from "@/features/admin-services/admin-services.authorization";
 
 const Index = lazy(() => import("./pages/Index"));
 const Sobre = lazy(() => import("./pages/Sobre"));
@@ -115,7 +116,7 @@ function AppRoutes() {
           path="/admin/servicos"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario']}>
+              <RoleGuard allowedRoles={ADMIN_SERVICES_READ_ROLES}>
                 <AdminServicos />
               </RoleGuard>
             </ProtectedRoute>
