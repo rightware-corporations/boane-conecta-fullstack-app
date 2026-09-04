@@ -4,15 +4,18 @@ import { useAuth } from '@/hooks/use-auth';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from './AdminSidebar';
 import { Menu } from 'lucide-react';
+import { InternalShell } from '@/shells/internal/InternalShell';
+import { navigationForRole } from '@/shells/internal/internal-navigation';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
+  shell?: 'legacy' | 'operations';
 }
 
-export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
-  const { user, isLoading } = useAuth();
+export function AdminLayout({ children, title, subtitle, shell = 'legacy' }: AdminLayoutProps) {
+  const { user, profile, role, logout, isLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,6 +34,22 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
 
   if (!user) {
     return null;
+  }
+
+  if (shell === 'operations') {
+    return (
+      <InternalShell
+        title={title}
+        subtitle={subtitle}
+        role={role}
+        navigation={navigationForRole(role)}
+        userName={profile?.full_name || user.fullName || user.email || 'Utilizador'}
+        userEmail={user.email}
+        onLogout={logout}
+      >
+        {children}
+      </InternalShell>
+    );
   }
 
   return (

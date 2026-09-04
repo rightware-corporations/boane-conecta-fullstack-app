@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { AlertCircle, BellRing, CheckCircle2, DoorClosed, DoorOpen, RefreshCw, UserRoundX } from 'lucide-react';
+import { AlertCircle, BellRing, CheckCircle2, DoorClosed, DoorOpen, UserRoundX } from 'lucide-react';
 
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -8,14 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { OperationalEmpty, OperationalError, OperationalLoading } from '@/design-system/components/operational-state';
 import {
   callNext, closeDesk, completeService, getQueueSnapshots, markNoShow, openDesk,
   recallTicket, startService, transferTicket,
 } from '@/features/queue-operations/api/queue-operations.api';
 import type { StaffQueueDesk, StaffQueueSnapshot } from '@/features/queue-operations/types';
 import { useAuth } from '@/hooks/use-auth';
+import { formatOperationalAge, formatTime } from '@/lib/formatters';
 
 const queueLabel: Record<string, string> = { OPEN: 'Aberta', PAUSED: 'Pausada', CLOSED: 'Encerrada' };
 const deskLabel: Record<string, string> = { OPEN: 'Disponível', SERVING: 'Em atendimento', PAUSED: 'Pausado', CLOSED: 'Fechado' };
@@ -51,17 +52,20 @@ export default function AdminFilas() {
 
   function run(action: () => Promise<unknown>) { command.mutate(action); }
 
-  return <AdminLayout title="Operação de filas" subtitle="Atendimento presencial em tempo real">
+  return <AdminLayout title="Operação de filas" subtitle="Atendimento presencial em tempo real" shell="operations">
     <div className="mx-auto max-w-[1280px] space-y-6">
-      <header className="border-b pb-5">
+      <header className="border-b pb-5 tb:flex tb:items-end tb:justify-between tb:gap-6">
+        <div>
         <p className="text-sm font-medium text-primary">Operação do balcão</p>
         <h2 className="mt-1 text-2xl font-semibold">Quem deve ser atendido agora?</h2>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Selecione a fila e o seu balcão. As ações disponíveis dependem do estado operacional atual.</p>
+        </div>
+        {queue && <p className="mt-3 shrink-0 text-xs text-muted-foreground tb:mt-0">Atualizado {formatTime(queue.generatedAt)}</p>}
       </header>
 
-      {snapshots.isLoading && <div className="space-y-3"><Skeleton className="h-12" /><Skeleton className="h-64" /></div>}
-      {snapshots.isError && <Alert variant="destructive"><AlertCircle className="size-4" /><AlertTitle>Não foi possível carregar as filas</AlertTitle><AlertDescription><Button className="mt-3" variant="outline" onClick={() => snapshots.refetch()}><RefreshCw className="mr-2 size-4" />Tentar novamente</Button></AlertDescription></Alert>}
-      {snapshots.data?.length === 0 && <div className="rounded-lg border border-dashed p-8 text-center"><h3 className="font-semibold">Nenhuma fila configurada</h3><p className="mt-2 text-sm text-muted-foreground">Um administrador deve configurar a fila e os balcões antes da operação.</p></div>}
+      {snapshots.isLoading && <OperationalLoading label="A carregar filas e balcões…" />}
+      {snapshots.isError && <OperationalError title="Não foi possível carregar as filas" description="A ligação operacional falhou. Tente novamente sem repetir nenhuma ação anterior." retry={() => void snapshots.refetch()} />}
+      {snapshots.data?.length === 0 && <OperationalEmpty title="Nenhuma fila configurada" description="Um administrador deve configurar a fila e os balcões antes da operação." />}
 
       {queue && <>
         <div className="grid gap-4 tb:grid-cols-2">
@@ -69,14 +73,13 @@ export default function AdminFilas() {
           <div className="space-y-2"><Label htmlFor="desk">Balcão</Label><select id="desk" className="min-h-11 w-full rounded-md border bg-background px-3 text-sm" value={deskId} onChange={(event) => setDeskId(event.target.value)} disabled={command.isPending}><option value="">Selecione um balcão</option>{queue.desks.map((item) => <option key={item.id} value={item.id}>{item.displayName} — {deskLabel[item.status] || item.status}</option>)}</select></div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card p-4">
+        <div className="flex flex-wrap items-center gap-3 border-y bg-surface-subtle px-4 py-3">
           <div className="mr-auto"><p className="font-semibold">{queue.queueName}</p><p className="text-sm text-muted-foreground">Estado da fila: {queueLabel[queue.queueStatus] || queue.queueStatus}</p></div>
           <Badge variant={queue.queueStatus === 'OPEN' ? 'secondary' : 'outline'}>{queueLabel[queue.queueStatus] || queue.queueStatus}</Badge>
-          <span className="text-xs text-muted-foreground">Atualizado {new Date(queue.generatedAt).toLocaleTimeString('pt-MZ')}</span>
         </div>
 
         {desk && <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]">
-          <section className="space-y-5 rounded-lg border bg-card p-5" aria-labelledby="desk-title">
+          <section className="space-y-5 rounded-lg border bg-card p-4 xsm:p-5" aria-labelledby="desk-title">
             <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm text-muted-foreground">O seu posto</p><h3 id="desk-title" className="text-xl font-semibold">{desk.displayName}</h3></div><Badge variant="outline">{deskLabel[desk.status] || desk.status}</Badge></div>
 
             {!desk.currentStaffUserId && <div className="rounded-md border border-dashed p-5"><p className="font-medium">Balcão sem funcionário</p><p className="mt-1 text-sm text-muted-foreground">Abra o balcão para assumir este posto.</p><Button className="mt-4" disabled={queue.queueStatus !== 'OPEN' || command.isPending} onClick={() => run(() => openDesk(queue.queueId, desk.id))}><DoorOpen className="mr-2 size-4" />Abrir balcão</Button></div>}
@@ -88,7 +91,7 @@ export default function AdminFilas() {
             {command.isError && <Alert variant="destructive"><AlertCircle className="size-4" /><AlertTitle>A operação não foi concluída</AlertTitle><AlertDescription>O estado pode ter mudado noutro posto. Atualize a fila antes de repetir.<Button variant="outline" className="mt-3 block" onClick={() => snapshots.refetch()}>Atualizar estado</Button></AlertDescription></Alert>}
           </section>
 
-          <section className="rounded-lg border bg-card" aria-labelledby="waiting-title"><div className="border-b p-4"><h3 id="waiting-title" className="font-semibold">Fila de espera</h3><p className="text-sm text-muted-foreground">Ordem calculada pelo motor da fila</p></div>{queue.waiting.length ? <ol className="divide-y">{queue.waiting.map((ticket, index) => <li key={ticket.id} className="flex items-center justify-between gap-4 p-4"><div><p className="font-semibold">{ticket.code}</p><p className="text-xs text-muted-foreground">Chegada {new Date(ticket.createdAt).toLocaleTimeString('pt-MZ')}</p></div><span className="text-sm text-muted-foreground">{index + 1}º</span></li>)}</ol> : <p className="p-6 text-center text-sm text-muted-foreground">Não há senhas a aguardar.</p>}</section>
+          <section className="rounded-lg border bg-card" aria-labelledby="waiting-title"><div className="border-b p-4"><h3 id="waiting-title" className="font-semibold">Fila de espera</h3><p className="text-sm text-muted-foreground">Ordem calculada pelo motor da fila</p></div>{queue.waiting.length ? <ol className="divide-y">{queue.waiting.map((ticket, index) => <li key={ticket.id} className="flex min-h-14 items-center justify-between gap-4 px-4 py-3"><div><p className="font-semibold">{ticket.code}</p><p className="text-xs text-muted-foreground">Chegada {formatTime(ticket.createdAt)} · {formatOperationalAge(ticket.createdAt)}</p></div><span className="text-sm text-muted-foreground">{index + 1}º</span></li>)}</ol> : <p className="p-6 text-center text-sm text-muted-foreground">Não há senhas a aguardar.</p>}</section>
         </div>}
       </>}
     </div>
