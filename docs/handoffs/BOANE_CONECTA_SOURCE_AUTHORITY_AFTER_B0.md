@@ -1,6 +1,6 @@
 # BOANE CONECTA — Source Authority After B0
 
-**Decision:** canonical continuation source established by controlled publication.
+**Decision:** canonical continuation source prepared locally; remote authority remains pending because publication authentication failed.
 
 ## Canonical repository
 
@@ -12,11 +12,11 @@
 - Verified remote SHA before B0: `378fc31a7539fd086e1268e4c3a0c1c07c7f0cb0`
 - Role: immutable publication base and historical authority for F5.
 
-## Canonical continuation authority
+## Intended canonical continuation authority
 
 - Branch: `feat/fullstack-f5-internal-shell-convergence`
-- Role: authoritative source for the reconstructed Baseline V2, Blocks 01–11 records, and all approved continuation after B0.
-- Final published HEAD: the commit containing this authority record and the B0 publication report; resolve with `git rev-parse origin/feat/fullstack-f5-internal-shell-convergence`.
+- Role after successful future publication: authoritative source for the reconstructed Baseline V2, Blocks 01–11 records, and all approved continuation after B0.
+- Local prepared branch only: it is not remote authority until a normal authenticated push and remote tree verification succeed.
 
 ## Baseline V2
 
@@ -35,4 +35,4 @@
 - Old lost unpublished SHAs `bb46e4f`, `05c4e06`, `44babfa`, `6ad38a2`: historical references only and not required.
 - Backend source, migrations and dependencies: unchanged by B0.
 
-Future work must fetch and revalidate the canonical continuation branch before writing. No implementation may infer current HEAD from this document alone.
+Publication attempt from this environment failed before transfer because HTTPS GitHub credentials were unavailable. Until a successful normal push is verified, remote F5 remains the only published development authority. Future work must revalidate the remote before writing. No implementation may infer current HEAD from this document alone.

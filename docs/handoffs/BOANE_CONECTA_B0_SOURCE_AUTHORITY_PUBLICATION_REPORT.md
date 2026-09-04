@@ -2,6 +2,8 @@
 
 ## 1. Verdict scope
 
+**B0 — SOURCE AUTHORITY PUBLICATION NO-GO**
+
 B0 reconstructs and publishes the approved Baseline V2 from the live F5 remote base. It introduces no feature, backend source, migration, dependency, environment or redesign change.
 
 ## 2. Remote verification
@@ -111,4 +113,18 @@ After successful normal push and remote tree verification:
 
 ## 13. B1 readiness
 
-**READY only after remote branch/HEAD/tree verification succeeds.** B1 must begin by fetching and revalidating the published continuation branch. B1 may establish the reproducible runtime but must not silently expand feature scope.
+**NOT READY.** B1 must not begin until the prepared branch is pushed normally and remote branch/HEAD/tree verification succeeds.
+
+## 14. Push result and exact blocker
+
+- Command: `git push -u origin feat/fullstack-f5-internal-shell-convergence`.
+- Result: FAIL before transfer.
+- Error: GitHub HTTPS credentials were unavailable in this sandbox (`could not read Username for 'https://github.com'`).
+- Remote target branch created: no evidence; subsequent work must confirm with `git ls-remote`.
+- Force push attempted: no.
+- `master` modified: no.
+- remote F5 modified: no.
+- Local prepared HEAD before this no-go record: `0e353e0d75d8fb3a4f2d6d253965a810db018410`.
+- Local prepared tree before this no-go record: `acdd8d6a9ba3d9ad64388c0add322e72890f2f33`.
+
+The prepared local branch and original dirty recovery source are preserved. Resume only in an authenticated GitHub environment, revalidate that the remote target branch is absent or equivalent, run the pre-push gates, then perform a normal push without force.
