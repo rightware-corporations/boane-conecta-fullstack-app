@@ -42,6 +42,37 @@ export function clearAuthTokens() {
   setRefreshToken(null);
 }
 
+export const AUTH_INVALIDATED_EVENT = 'boane:auth-invalidated';
+export const AUTH_REFRESHED_EVENT = 'boane:auth-refreshed';
+let refreshInFlight: Promise<boolean> | null = null;
+
+function invalidateSession() {
+  clearAuthTokens();
+  window.dispatchEvent(new Event(AUTH_INVALIDATED_EVENT));
+}
+
+async function refreshAccessToken(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight;
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return false;
+  refreshInFlight = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (!response.ok) return false;
+      const envelope = await response.json() as { success?: boolean; data?: { accessToken?: string; refreshToken?: string } };
+      if (!envelope.success || !envelope.data?.accessToken || !envelope.data?.refreshToken) return false;
+      setAuthToken(envelope.data.accessToken);
+      setRefreshToken(envelope.data.refreshToken);
+      window.dispatchEvent(new Event(AUTH_REFRESHED_EVENT));
+      return true;
+    } catch { return false; }
+  })();
+  try { return await refreshInFlight; } finally { refreshInFlight = null; }
+}
+
 type ApiErrorPayload = {
   message?: string;
   [key: string]: unknown;
@@ -67,7 +98,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(endpoint: string, options: RequestInit = {}, retried = false): Promise<T> {
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   const isMultipart = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers: Record<string, string> = {
@@ -85,17 +116,35 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   if (contentType.includes('application/json')) data = await response.json();
 
   const errorData = typeof data === 'object' && data !== null ? data as ApiErrorPayload : undefined;
-  if (!response.ok) throw new ApiError(response.status, response.statusText, errorData);
+  if (!response.ok) {
+    if (response.status === 401 && !endpoint.startsWith('/auth/')) {
+      // A 401 does not prove the server did not apply a mutation. Refresh the
+      // session, but only replay read-only requests; callers decide whether to
+      // retry writes using their own idempotency contract.
+      if (!retried && await refreshAccessToken()) {
+        if ((options.method || 'GET').toUpperCase() === 'GET') return request<T>(endpoint, options, true);
+        throw new ApiError(response.status, response.statusText, errorData);
+      }
+      invalidateSession();
+    }
+    throw new ApiError(response.status, response.statusText, errorData);
+  }
   return data as T;
 }
 
-async function download(endpoint: string): Promise<Blob> {
+async function download(endpoint: string, retried = false): Promise<Blob> {
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   const headers: Record<string, string> = {};
   const token = getAuthToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(url, { headers });
-  if (!response.ok) throw new ApiError(response.status, response.statusText);
+  if (!response.ok) {
+    if (response.status === 401) {
+      if (!retried && await refreshAccessToken()) return download(endpoint, true);
+      invalidateSession();
+    }
+    throw new ApiError(response.status, response.statusText);
+  }
   return response.blob();
 }
 

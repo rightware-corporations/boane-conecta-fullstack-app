@@ -1,15 +1,15 @@
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
-import { useUserRole } from '@/hooks/useUserRole';
+import { destinationAfterLogin } from '@/lib/auth-navigation';
 
 interface PublicOnlyRouteProps {
   children: ReactNode;
 }
 
 export function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
-  const { getDefaultRedirect } = useUserRole();
+  const { isAuthenticated, isLoading, role } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -21,7 +21,9 @@ export function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
 
   // If user is authenticated, redirect to their default page
   if (isAuthenticated) {
-    return <Navigate to={getDefaultRedirect()} replace />;
+    const from = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)?.from;
+    const requested = from?.pathname ? `${from.pathname}${from.search || ''}${from.hash || ''}` : null;
+    return <Navigate to={destinationAfterLogin(role, requested)} replace state={null} />;
   }
 
   return <>{children}</>;

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
-import { useUserRole } from '@/hooks/useUserRole';
+import { destinationAfterLogin } from '@/lib/auth-navigation';
 import { toast } from 'sonner';
 import { Mail, Lock, User, LogIn } from 'lucide-react';
 
@@ -14,27 +14,32 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const { login, register } = useAuth();
-  const { getDefaultRedirect } = useUserRole();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
     setLoading(true);
 
     try {
       if (isLogin) {
-        const { error } = await login({ email, password });
+        const { error, role } = await login({ email, password });
         if (error) {
+          setFormError(error);
           toast.error(error);
         } else {
           toast.success('Login efectuado com sucesso!');
-          // Small delay to allow auth state to update
-          setTimeout(() => navigate(getDefaultRedirect()), 300);
+          const from = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)?.from;
+          const requested = from?.pathname ? `${from.pathname}${from.search || ''}${from.hash || ''}` : null;
+          navigate(destinationAfterLogin(role || null, requested), { replace: true, state: null });
         }
       } else {
         const { error } = await register({ email, password, full_name: fullName });
         if (error) {
+          setFormError(error);
           toast.error(error);
         } else {
           toast.success('Conta criada com sucesso! Pode iniciar sessão.');
@@ -71,16 +76,8 @@ export default function Auth() {
               </p>
             </div>
 
-            {/* Demo credentials info */}
-            {isLogin && (
-              <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border text-xs text-muted-foreground">
-                <p className="font-medium text-foreground mb-1">Conta Demo (Munícipe):</p>
-                <p>Email: municipe@demo.boane.gov.mz</p>
-                <p>Senha: demo123456</p>
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+              {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
               {!isLogin && (
                 <div>
                   <label htmlFor="fullName" className="block text-sm font-medium text-foreground mb-1">
