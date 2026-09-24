@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="720" viewBox="0 0 1100 720">
+<rect width="1100" height="720" fill="#f8fafb"/>
+<text x="35" y="48" font-family="sans-serif" font-weight="bold" font-size="24" fill="#182c3c">WF-01 · escalas de composição S01–S08</text>
+<text x="35" y="75" font-family="sans-serif" font-size="14" fill="#526171">Esquema de proporções planeadas; não é captura do frontend implementado.</text>
+<text x="35" y="136" font-family="sans-serif" font-size="15" fill="#182c3c">320px</text>
+<rect x="255" y="112" width="103.3" height="38" rx="3" fill="white" stroke="#9aa6ac"/>
+<rect x="260.2" y="120" width="93.0" height="22" rx="2" fill="#276148"/>
+<text x="900" y="136" font-family="sans-serif" font-size="14" fill="#182c3c">área 288px · tarefa 288px</text>
+<text x="35" y="200" font-family="sans-serif" font-size="15" fill="#182c3c">375px</text>
+<rect x="255" y="176" width="121.1" height="38" rx="3" fill="white" stroke="#9aa6ac"/>
+<rect x="260.2" y="184" width="110.8" height="22" rx="2" fill="#276148"/>
+<text x="900" y="200" font-family="sans-serif" font-size="14" fill="#182c3c">área 343px · tarefa 343px</text>
+<text x="35" y="264" font-family="sans-serif" font-size="15" fill="#182c3c">390px</text>
+<rect x="255" y="240" width="125.9" height="38" rx="3" fill="white" stroke="#9aa6ac"/>
+<rect x="260.2" y="248" width="115.6" height="22" rx="2" fill="#276148"/>
+<text x="900" y="264" font-family="sans-serif" font-size="14" fill="#182c3c">área 358px · tarefa 358px</text>
+<text x="35" y="328" font-family="sans-serif" font-size="15" fill="#182c3c">430px</text>
+<rect x="255" y="304" width="138.9" height="38" rx="3" fill="white" stroke="#9aa6ac"/>
+<rect x="260.2" y="312" width="128.5" height="22" rx="2" fill="#276148"/>
+<text x="900" y="328" font-family="sans-serif" font-size="14" fill="#182c3c">área 398px · tarefa 398px</text>
+<text x="35" y="392" font-family="sans-serif" font-size="15" fill="#182c3c">768px</text>
+<rect x="255" y="368" width="248.0" height="38" rx="3" fill="white" stroke="#9aa6ac"/>
+<rect x="255" y="368" width="82.7" height="38" fill="#e1e9ea"/>
+<rect x="345.4" y="376" width="149.8" height="22" rx="2" fill="#276148"/>
+<text x="900" y="392" font-family="sans-serif" font-size="14" fill="#182c3c">área 464px · tarefa 464px</text>
+<text x="35" y="456" font-family="sans-serif" font-size="15" fill="#182c3c">1024px</text>
+<rect x="255" y="432" width="330.7" height="38" rx="3" fill="white" stroke="#9aa6ac"/>
+<rect x="255" y="432" width="82.7" height="38" fill="#e1e9ea"/>
+<rect x="348.0" y="440" width="227.3" height="22" rx="2" fill="#276148"/>
+<text x="900" y="456" font-family="sans-serif" font-size="14" fill="#182c3c">área 704px · tarefa 704px</text>
+<text x="35" y="520" font-family="sans-serif" font-size="15" fill="#182c3c">1280px</text>
+<rect x="255" y="496" width="413.3" height="38" rx="3" fill="white" stroke="#9aa6ac"/>
+<rect x="255" y="496" width="82.7" height="38" fill="#e1e9ea"/>
+<rect x="386.8" y="504" width="232.5" height="22" rx="2" fill="#276148"/>
+<text x="900" y="520" font-family="sans-serif" font-size="14" fill="#182c3c">área 960px · tarefa 720px</text>
+<text x="35" y="584" font-family="sans-serif" font-size="15" fill="#182c3c">1440px</text>
+<rect x="255" y="560" width="465.0" height="38" rx="3" fill="white" stroke="#9aa6ac"/>
+<rect x="255" y="560" width="82.7" height="38" fill="#e1e9ea"/>
+<rect x="412.6" y="568" width="232.5" height="22" rx="2" fill="#276148"/>
+<text x="900" y="584" font-family="sans-serif" font-size="14" fill="#182c3c">área 1120px · tarefa 720px</text>
+<text x="35" y="648" font-family="sans-serif" font-size="15" fill="#182c3c">1920px</text>
+<rect x="255" y="624" width="620.0" height="38" rx="3" fill="white" stroke="#9aa6ac"/>
+<rect x="255" y="624" width="82.7" height="38" fill="#e1e9ea"/>
+<rect x="438.4" y="632" width="232.5" height="22" rx="2" fill="#276148"/>
+<text x="900" y="648" font-family="sans-serif" font-size="14" fill="#182c3c">área 1280px · tarefa 720px</text>
+<rect x="255" y="691" width="22" height="14" fill="#e1e9ea"/><text x="282" y="703" font-family="sans-serif" font-size="13">navegação lateral quando ≥ 768px</text>
+<rect x="582" y="691" width="22" height="14" fill="#276148"/><text x="609" y="703" font-family="sans-serif" font-size="13">coluna de tarefa</text>
+</svg>
