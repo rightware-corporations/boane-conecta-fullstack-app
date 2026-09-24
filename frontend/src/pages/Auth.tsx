@@ -71,15 +71,6 @@ export default function Auth() {
               </p>
             </div>
 
-            {/* Demo credentials info */}
-            {isLogin && (
-              <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border text-xs text-muted-foreground">
-                <p className="font-medium text-foreground mb-1">Conta Demo (Munícipe):</p>
-                <p>Email: municipe@demo.boane.gov.mz</p>
-                <p>Senha: demo123456</p>
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               {!isLogin && (
                 <div>
