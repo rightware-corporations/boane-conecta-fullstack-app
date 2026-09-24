@@ -158,7 +158,7 @@ function AppRoutes() {
           path="/municipe"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
+              <RoleGuard allowedRoles={['municipe']}>
                 <CitizenDashboard />
               </RoleGuard>
             </ProtectedRoute>
@@ -168,7 +168,7 @@ function AppRoutes() {
           path="/municipe/perfil"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
+              <RoleGuard allowedRoles={['municipe']}>
                 <CitizenPerfil />
               </RoleGuard>
             </ProtectedRoute>
@@ -178,7 +178,7 @@ function AppRoutes() {
           path="/municipe/pedidos"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
+              <RoleGuard allowedRoles={['municipe']}>
                 <CitizenPedidos />
               </RoleGuard>
             </ProtectedRoute>
@@ -187,12 +187,12 @@ function AppRoutes() {
         <Route path="/admin/filas" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario', 'gestor']}><AdminFilas /></RoleGuard></ProtectedRoute>} />
         <Route path="/admin/agenda" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario', 'gestor']}><AdminAgenda /></RoleGuard></ProtectedRoute>} />
         <Route path="/admin/filas/configuracao" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin']}><AdminConfiguracaoFilas /></RoleGuard></ProtectedRoute>} />
-        <Route path="/municipe/pedidos/:id" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}><CitizenPedidoDetalhe /></RoleGuard></ProtectedRoute>} />
+        <Route path="/municipe/pedidos/:id" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><CitizenPedidoDetalhe /></RoleGuard></ProtectedRoute>} />
         <Route
           path="/municipe/documentos"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
+              <RoleGuard allowedRoles={['municipe']}>
                 <CitizenDocumentos />
               </RoleGuard>
             </ProtectedRoute>
@@ -202,7 +202,7 @@ function AppRoutes() {
           path="/municipe/licencas"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
+              <RoleGuard allowedRoles={['municipe']}>
                 <CitizenLicencas />
               </RoleGuard>
             </ProtectedRoute>
@@ -212,7 +212,7 @@ function AppRoutes() {
           path="/municipe/pagamentos"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
+              <RoleGuard allowedRoles={['municipe']}>
                 <CitizenPagamentos />
               </RoleGuard>
             </ProtectedRoute>
@@ -222,7 +222,7 @@ function AppRoutes() {
           path="/municipe/agendamentos"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
+              <RoleGuard allowedRoles={['municipe']}>
                 <CitizenAgendamentos />
               </RoleGuard>
             </ProtectedRoute>
@@ -232,7 +232,7 @@ function AppRoutes() {
           path="/municipe/notificacoes"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['municipe', 'super_admin', 'admin']}>
+              <RoleGuard allowedRoles={['municipe']}>
                 <CitizenNotificacoes />
               </RoleGuard>
             </ProtectedRoute>
