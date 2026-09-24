@@ -47,4 +47,4 @@ erDiagram
 | `idempotency_records` | `(citizen_user_id,operation,idempotency_key_hash)` único; fingerprint, estado e `response_resource_id` são gravados pela transação de submissão; sem FK declarada para response ID. |
 | `domain_outbox_events` | `aggregate_type`, `aggregate_id`, payload/status/tentativas; sem FK ao pedido; dispatcher independente após commit. |
 
-Não há migration CR-01: a lista de drafts e a regra de visibilidade usam campos/índices existentes. Validar `V1–V19` em PostgreSQL isolado antes de afirmar migração PASS em runtime.
+Não há migration CR-01: a lista de drafts e a regra de visibilidade usam campos/índices existentes. O [backend CI run #66](https://github.com/rightware-corporations/boane-conecta-fullstack-app/actions/runs/36007930140) executou `PostgresMigrationTest` em PostgreSQL 16 Testcontainers (1/1 PASS, 0 skipped), provando as migrations nesse ambiente de teste; o estado da base QA Windows continua por verificar.

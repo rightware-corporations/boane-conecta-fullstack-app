@@ -7,8 +7,8 @@
 - [x] Verificar `main`, PR #4 e branches antes de criar `feat/cr01-contract-resolution` desde FE-01.
 - [x] Preservar FE-01, `main`, branches divergentes e worktree original; nenhum merge/reset/force push.
 - [x] FE-01 frontend CI `success` no run #2; homologação manual por jornadas finais pendente.
-- [ ] CR-01 CI backend no HEAD final — preencher apenas após run completo.
-- [ ] PostgreSQL migrations V1–V19 na QA isolada — NOT RUN neste ambiente até teste real.
+- [x] CR-01 CI backend [run #66](https://github.com/rightware-corporations/boane-conecta-fullstack-app/actions/runs/36007930140) no commit `da2afca`: `mvn verify` PASS, 61 testes, 0 failures/errors/skipped.
+- [x] PostgreSQL 16 migrations V1–V19 testadas em `PostgresMigrationTest` com Testcontainers no run #66 (1 teste, 0 skipped). QA Windows continua NOT RUN.
 
 ## CR-01 contrato e fundação
 
@@ -18,7 +18,7 @@
 - [x] Documentar REST real, resolver após timeout e ERD, sem criar segundo domínio de pedidos.
 - [x] Acrescentar GET de drafts próprios retomáveis para S08 usando repositório/índice existentes, com teste.
 - [x] Não expor definição digital quando serviço de catálogo não está `PUBLISHED`, com teste.
-- [ ] Provar os dois testes novos com Java 21/Maven em CI e rever resultados.
+- [x] Dois testes CR-01 executados no run #66 com Java 21/Maven (1/1 em cada classe).
 - [ ] Decidir política de draft antigo quando a definição publicada muda; não migrar respostas implicitamente.
 - [ ] Definir transições de estado/atribuição/escopo staff com autoridade de domínio antes de Work Queue funcional.
 - [ ] Avaliar consistência de version numbers sob publicação concorrente e contrato de indisponibilidade/expiração em integração PostgreSQL.
