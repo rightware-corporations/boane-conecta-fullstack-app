@@ -14,18 +14,21 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const { login, register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
     setLoading(true);
 
     try {
       if (isLogin) {
         const { error, role } = await login({ email, password });
         if (error) {
+          setFormError(error);
           toast.error(error);
         } else {
           toast.success('Login efectuado com sucesso!');
@@ -36,6 +39,7 @@ export default function Auth() {
       } else {
         const { error } = await register({ email, password, full_name: fullName });
         if (error) {
+          setFormError(error);
           toast.error(error);
         } else {
           toast.success('Conta criada com sucesso! Pode iniciar sessão.');
@@ -73,6 +77,7 @@ export default function Auth() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+              {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
               {!isLogin && (
                 <div>
                   <label htmlFor="fullName" className="block text-sm font-medium text-foreground mb-1">

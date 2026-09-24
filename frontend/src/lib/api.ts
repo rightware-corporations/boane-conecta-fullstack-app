@@ -118,7 +118,13 @@ async function request<T>(endpoint: string, options: RequestInit = {}, retried =
   const errorData = typeof data === 'object' && data !== null ? data as ApiErrorPayload : undefined;
   if (!response.ok) {
     if (response.status === 401 && !endpoint.startsWith('/auth/')) {
-      if (!retried && await refreshAccessToken()) return request<T>(endpoint, options, true);
+      // A 401 does not prove the server did not apply a mutation. Refresh the
+      // session, but only replay read-only requests; callers decide whether to
+      // retry writes using their own idempotency contract.
+      if (!retried && await refreshAccessToken()) {
+        if ((options.method || 'GET').toUpperCase() === 'GET') return request<T>(endpoint, options, true);
+        throw new ApiError(response.status, response.statusText, errorData);
+      }
       invalidateSession();
     }
     throw new ApiError(response.status, response.statusText, errorData);

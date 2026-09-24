@@ -61,4 +61,35 @@ describe('FE-01 authentication boundary', () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[2][1].headers.Authorization).toBe('Bearer fresh');
   });
+
+  it.each(['post', 'put', 'patch', 'delete', 'upload'] as const)(
+    'refreshes the session without automatically replaying a rejected %s', async method => {
+      setAuthToken('expired'); setRefreshToken('r1');
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(json({ message: 'Expired' }, 401))
+        .mockResolvedValueOnce(json({ success: true, data: { accessToken: 'fresh', refreshToken: 'r2' } }));
+      vi.stubGlobal('fetch', fetchMock);
+      const { api } = await import('@/lib/api');
+      const operation = method === 'upload' ? api.upload('/citizen/documents', new FormData())
+        : method === 'delete' ? api.delete('/citizen/items/1')
+        : api[method]('/citizen/items', { value: 'qa' });
+      await expect(operation).rejects.toMatchObject({ status: 401 });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(getAuthToken()).toBe('fresh');
+      expect(getRefreshToken()).toBe('r2');
+    },
+  );
+
+  it('does not refresh or retry a read indefinitely after a second 401', async () => {
+    setAuthToken('expired'); setRefreshToken('r1');
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(json({ message: 'Expired' }, 401))
+      .mockResolvedValueOnce(json({ success: true, data: { accessToken: 'fresh', refreshToken: 'r2' } }))
+      .mockResolvedValueOnce(json({ message: 'Still unauthorized' }, 401));
+    vi.stubGlobal('fetch', fetchMock);
+    const { api } = await import('@/lib/api');
+    await expect(api.get('/citizen/requests')).rejects.toMatchObject({ status: 401 });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(getRefreshToken()).toBeNull();
+  });
 });
