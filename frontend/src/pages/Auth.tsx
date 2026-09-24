@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
-import { useUserRole } from '@/hooks/useUserRole';
+import { destinationAfterLogin } from '@/lib/auth-navigation';
 import { toast } from 'sonner';
 import { Mail, Lock, User, LogIn } from 'lucide-react';
 
@@ -15,8 +15,8 @@ export default function Auth() {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
-  const { getDefaultRedirect } = useUserRole();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,13 +24,14 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        const { error } = await login({ email, password });
+        const { error, role } = await login({ email, password });
         if (error) {
           toast.error(error);
         } else {
           toast.success('Login efectuado com sucesso!');
-          // Small delay to allow auth state to update
-          setTimeout(() => navigate(getDefaultRedirect()), 300);
+          const from = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)?.from;
+          const requested = from?.pathname ? `${from.pathname}${from.search || ''}${from.hash || ''}` : null;
+          navigate(destinationAfterLogin(role || null, requested), { replace: true, state: null });
         }
       } else {
         const { error } = await register({ email, password, full_name: fullName });

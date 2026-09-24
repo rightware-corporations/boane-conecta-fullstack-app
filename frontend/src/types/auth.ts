@@ -60,7 +60,7 @@ export interface AuthContextType {
   permissions: string[];
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<{ error: string | null }>;
+  login: (credentials: LoginCredentials) => Promise<{ error: string | null; role?: UserRole }>;
   register: (data: RegisterData) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;

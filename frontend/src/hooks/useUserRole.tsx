@@ -1,5 +1,6 @@
 import { useAuth } from './use-auth';
 import type { UserRole } from '@/types';
+import { defaultRoute } from '@/lib/auth-navigation';
 
 export function useUserRole() {
   const { profile, role, permissions, isLoading } = useAuth();
@@ -43,21 +44,7 @@ export function useUserRole() {
 
   // Get default redirect path after login based on role
   const getDefaultRedirect = (): string => {
-    switch (role) {
-      case 'super_admin':
-      case 'admin':
-        return '/admin';
-      case 'editor':
-        return '/admin';
-      case 'funcionario':
-        return '/admin';
-      case 'gestor':
-        return '/admin';
-      case 'municipe':
-        return '/municipe';
-      default:
-        return '/';
-    }
+    return defaultRoute(role);
   };
 
   return {

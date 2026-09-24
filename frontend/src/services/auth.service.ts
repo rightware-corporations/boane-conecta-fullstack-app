@@ -1,4 +1,4 @@
-import { api, setAuthToken, setRefreshToken, clearAuthTokens, getRefreshToken, getErrorMessage } from '@/lib/api';
+import { api, ApiError, setAuthToken, setRefreshToken, clearAuthTokens, getRefreshToken, getErrorMessage } from '@/lib/api';
 import type {
   AuthSession,
   LoginCredentials,
@@ -34,7 +34,8 @@ function mapRole(roles?: string[]): UserRole {
   if (normalized.includes('MANAGER')) return 'gestor';
   if (normalized.includes('EMPLOYEE')) return 'funcionario';
   if (normalized.includes('EDITOR')) return 'editor';
-  return 'municipe';
+  if (normalized.includes('CITIZEN')) return 'municipe';
+  throw new Error('A conta não tem um papel reconhecido. Contacte o suporte.');
 }
 
 function mapUser(user: BackendUser): User {
@@ -95,6 +96,7 @@ export const authService = {
       }
       return { error: response.message || 'Login failed' };
     } catch (error) {
+      clearAuthTokens();
       return { error: getErrorMessage(error, 'Network error during login') };
     }
   },
@@ -145,7 +147,7 @@ export const authService = {
     }
   },
 
-  async me(): Promise<{ data?: { user: User; profile: Profile }; error?: string }> {
+  async me(): Promise<{ data?: { user: User; profile: Profile }; error?: string; unauthorized?: boolean }> {
     try {
       const response = await api.get<ApiResponse<BackendUser>>('/auth/me');
       if (response.success && response.data) {
@@ -153,7 +155,7 @@ export const authService = {
       }
       return { error: response.message || 'Failed to fetch user data' };
     } catch (error) {
-      return { error: getErrorMessage(error, 'Network error fetching user data') };
+      return { error: getErrorMessage(error, 'Network error fetching user data'), unauthorized: error instanceof ApiError && error.status === 401 };
     }
   },
 };
