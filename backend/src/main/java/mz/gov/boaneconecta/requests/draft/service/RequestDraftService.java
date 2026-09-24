@@ -96,6 +96,17 @@ public class RequestDraftService {
         return toResponse(requireOwnedDraft(citizenUserId, draftId));
     }
 
+    @Transactional(readOnly = true)
+    public List<RequestDraftResponse> listResumable(UUID citizenUserId) {
+        User citizen = requireUser(citizenUserId);
+        Instant now = Instant.now();
+        return draftRepository.findByCitizenUserAndStatusInOrderByUpdatedAtDesc(citizen, RESUMABLE)
+                .stream()
+                .filter(draft -> draft.isEditable(now))
+                .map(this::toResponse)
+                .toList();
+    }
+
     @Transactional
     public RequestDraftResponse saveAnswers(
             UUID citizenUserId,

@@ -74,6 +74,14 @@ public class CitizenRequestDraftController {
                 .body(ApiResponse.success("Request draft retrieved", response));
     }
 
+    @GetMapping
+    public ApiResponse<List<RequestDraftResponse>> listResumable(
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        return ApiResponse.success(
+                "Resumable request drafts retrieved",
+                draftService.listResumable(principal.getId()));
+    }
+
     @PatchMapping("/{draftId}/answers")
     public ResponseEntity<ApiResponse<RequestDraftResponse>> saveAnswers(
             @AuthenticationPrincipal UserDetailsImpl principal,

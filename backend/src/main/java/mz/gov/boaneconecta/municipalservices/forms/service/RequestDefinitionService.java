@@ -135,6 +135,9 @@ public class RequestDefinitionService {
     @Transactional(readOnly = true)
     public ServiceFormVersion requirePublishedVersion(UUID serviceId) {
         MunicipalService service = requireService(serviceId);
+        if (service.getStatus() != MunicipalServiceStatus.PUBLISHED) {
+            throw new ResourceNotFoundException("Digital request definition is not available");
+        }
         ServiceFormDefinition definition = formDefinitionRepository
                 .findByServiceAndDefinitionKey(service, "citizen-request")
                 .orElseThrow(() -> new ResourceNotFoundException("Digital request definition is not available"));
