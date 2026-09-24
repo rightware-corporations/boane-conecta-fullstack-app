@@ -48,11 +48,11 @@ export function useUserRole() {
       case 'admin':
         return '/admin';
       case 'editor':
-        return '/admin/noticias';
+        return '/admin';
       case 'funcionario':
-        return '/admin/pedidos';
+        return '/admin';
       case 'gestor':
-        return '/admin/projectos';
+        return '/admin';
       case 'municipe':
         return '/municipe';
       default:
