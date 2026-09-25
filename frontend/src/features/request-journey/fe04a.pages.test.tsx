@@ -43,7 +43,8 @@ describe('FE-04a S04/S05',()=>{
     fireEvent.click(screen.getByRole('button',{name:'Validar rascunho no servidor'}));
     await waitFor(()=>expect(requestJourneyApi.validate).toHaveBeenCalledWith(id,'"4"'));
     fireEvent.click(screen.getByRole('checkbox'));
-    expect(screen.getByText(/A submissão ainda não está disponível/)).toBeInTheDocument();
+    expect(screen.getByText(/Confirme o envio na próxima etapa/)).toBeInTheDocument();
+    expect(screen.getByRole('button',{name:'Continuar para submissão'})).toBeDisabled();
   });
   it('shows backend field and requirement errors without accepting declaration',async()=>{
     vi.mocked(requestJourneyApi.validate).mockResolvedValue({validation:{valid:false,fieldErrors:[{code:'REQUIRED',fieldKey:'name',message:'Campo obrigatório'}],documentErrors:[{code:'DOCUMENT_REQUIRED',requirementKey:'proof',message:'Documento obrigatório'}],globalErrors:[],draft},detail:{draft,etag:'"4"'}} as never);
