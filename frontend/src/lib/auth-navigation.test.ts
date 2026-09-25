@@ -24,3 +24,26 @@ describe('FE-01 post-login destination', () => {
     },
   );
 });
+
+const serviceId = '11111111-1111-4111-8111-111111111111';
+const draftId = '22222222-2222-4222-8222-222222222222';
+describe('FE-03a protected return destinations', () => {
+  it.each([
+    `/municipe/pedidos/iniciar/${serviceId}`,
+    '/municipe/pedidos/rascunhos',
+    `/municipe/pedidos/rascunhos/${draftId}`,
+  ])('returns citizen to %s', path => {
+    expect(destinationAfterLogin('municipe', path)).toBe(path);
+    expect(destinationAfterLogin('funcionario', path)).toBe('/admin');
+  });
+  it.each([
+    '/municipe/pedidos/iniciar/evil',
+    '/municipe/pedidos/rascunhos/evil',
+    `/municipe/pedidos/rascunhos/${draftId}?next=https://evil.example`,
+    `/municipe/pedidos/iniciar/${serviceId}/../../admin`,
+    '//evil.example/municipe/pedidos/rascunhos',
+    `/municipe/pedidos/rascunhos/${draftId}%2fadmin`,
+  ])('rejects unsafe FE-03a destination %s', path => {
+    expect(destinationAfterLogin('municipe', path)).toBe('/municipe');
+  });
+});

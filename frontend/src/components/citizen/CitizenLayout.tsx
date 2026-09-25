@@ -9,15 +9,16 @@ interface CitizenLayoutProps {
   children: ReactNode;
   title: string;
   subtitle?: string;
+  wrapTitle?: boolean;
 }
 
-export function CitizenLayout({ children, title, subtitle }: CitizenLayoutProps) {
+export function CitizenLayout({ children, title, subtitle, wrapTitle = false }: CitizenLayoutProps) {
   const header = (
     <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/90">
       <div className="flex min-h-16 items-center justify-between gap-4 px-4 xsm:px-5 tb:px-6 lg:px-8">
         <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h1>
-          {subtitle && <p className="truncate text-xs text-muted-foreground tb:text-sm">{subtitle}</p>}
+          <h1 className={`${wrapTitle ? 'break-words' : 'truncate'} text-lg font-semibold tracking-tight text-foreground`}>{title}</h1>
+          {subtitle && <p className={`${wrapTitle ? 'break-words' : 'truncate'} text-xs text-muted-foreground tb:text-sm`}>{subtitle}</p>}
         </div>
         <Link
           to="/municipe/notificacoes"

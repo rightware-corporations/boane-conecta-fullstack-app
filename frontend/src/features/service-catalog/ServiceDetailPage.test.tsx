@@ -17,7 +17,7 @@ vi.mock('@/hooks/use-auth', () => ({
 }));
 
 const service: MunicipalService = {
-  id: '1', slug: 'certidao', title: 'Certidão Municipal', description: 'Emissão de certidão', category: 'Atendimento',
+  id: '11111111-1111-4111-8111-111111111111', slug: 'certidao', title: 'Certidão Municipal', description: 'Emissão de certidão', category: 'Atendimento',
   processingTime: '5 dias úteis', availability: 'available', availabilityLabel: 'Disponível', channels: [], audiences: [],
   requirements: [{ id: 'r1', title: 'Documento de identificação', description: null, required: true }],
   documents: [], process: [], locations: [], legalReferences: [], faq: [], fees: [], keywords: [],
@@ -46,14 +46,14 @@ describe('ServiceDetailPage', () => {
     expect(screen.getByRole('heading', { name: 'Resumo prático' })).toBeInTheDocument();
     expect(screen.getByText('Documento de identificação')).toBeInTheDocument();
     expect(screen.getAllByText('Esta informação ainda não foi publicada pelo município.').length).toBeGreaterThan(0);
-    expect(screen.queryByRole('link', { name: 'Iniciar pedido' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Verificar submissão digital' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Marcar atendimento' })).not.toBeInTheDocument();
   });
 
   it('shows the canonical CTAs only for explicitly published channels', async () => {
     vi.mocked(getMunicipalService).mockResolvedValue({ ...service, channels: ['online', 'in_person'] });
     renderDetail();
-    expect(await screen.findByRole('link', { name: 'Iniciar pedido' })).toHaveAttribute('href', '/municipe/servicos/certidao/iniciar');
+    expect(await screen.findByRole('link', { name: 'Verificar submissão digital' })).toHaveAttribute('href', '/municipe/pedidos/iniciar/11111111-1111-4111-8111-111111111111');
     expect(screen.getByRole('link', { name: 'Marcar atendimento' })).toHaveAttribute('href', '/municipe/agendamentos');
   });
 
@@ -67,6 +67,13 @@ describe('ServiceDetailPage', () => {
     renderDetail();
     expect((await screen.findAllByText('Temporariamente suspenso')).length).toBeGreaterThan(0);
     expect(screen.getByText(/permanece visível para consulta/)).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Iniciar pedido' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Verificar submissão digital' })).not.toBeInTheDocument();
+  });
+
+  it('does not create a start link when the catalog lacks a valid service UUID', async () => {
+    vi.mocked(getMunicipalService).mockResolvedValue({ ...service, id: 'legacy-slug', channels: ['online'] });
+    renderDetail();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Certidão Municipal' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Verificar submissão digital' })).not.toBeInTheDocument();
   });
 });

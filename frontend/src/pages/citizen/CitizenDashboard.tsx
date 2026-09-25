@@ -90,7 +90,7 @@ function DashboardContent({ dashboard }: { dashboard: DashboardData }) {
           )) : <EmptyLine>Não existem pedidos ativos.</EmptyLine>}
         </HomeSection>
 
-        <HomeSection title="Rascunhos" icon={FileText} href="/municipe/pedidos" linkLabel="Gerir rascunhos">
+        <HomeSection title="Rascunhos" icon={FileText} href="/municipe/pedidos/rascunhos" linkLabel="Gerir rascunhos">
           {dashboard.drafts.length ? dashboard.drafts.map((draft) => (
             <Link key={draft.id} to={`/municipe/pedidos/rascunhos/${draft.id}`} className="flex items-center justify-between gap-4 border-b border-border py-4 last:border-0 hover:bg-muted/40">
               <div>

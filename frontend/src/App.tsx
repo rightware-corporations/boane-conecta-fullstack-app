@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
 import { ADMIN_SERVICES_READ_ROLES } from "@/features/admin-services/admin-services.authorization";
+import { RequestJourneyAccountBoundary } from "@/features/request-journey/RequestJourneyAccountBoundary";
 
 const Index = lazy(() => import("./pages/Index"));
 const Sobre = lazy(() => import("./pages/Sobre"));
@@ -44,6 +45,9 @@ const CitizenDashboard = lazy(() => import("./pages/citizen/CitizenDashboard"));
 const CitizenPerfil = lazy(() => import("./pages/citizen/CitizenPerfil"));
 const CitizenPedidos = lazy(() => import("./pages/citizen/CitizenPedidos"));
 const CitizenPedidoDetalhe = lazy(() => import("./pages/citizen/CitizenPedidoDetalhe"));
+const RequestStartPage = lazy(() => import("./features/request-journey/RequestStartPage"));
+const RequestDraftsPage = lazy(() => import("./features/request-journey/RequestDraftsPage"));
+const RequestDraftResolverPage = lazy(() => import("./features/request-journey/RequestDraftResolverPage"));
 const CitizenDocumentos = lazy(() => import("./pages/citizen/CitizenDocumentos"));
 const CitizenLicencas = lazy(() => import("./pages/citizen/CitizenLicencas"));
 const CitizenPagamentos = lazy(() => import("./pages/citizen/CitizenPagamentos"));
@@ -54,7 +58,7 @@ const PublicQueueDisplay = lazy(() => import("./features/queue-display/PublicQue
 
 const queryClient = new QueryClient();
 
-function AppRoutes() {
+export function AppRoutes() {
   return (
     <Suspense fallback={<RouteLoading />}>
       <Routes>
@@ -187,6 +191,9 @@ function AppRoutes() {
         <Route path="/admin/filas" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario', 'gestor']}><AdminFilas /></RoleGuard></ProtectedRoute>} />
         <Route path="/admin/agenda" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin', 'funcionario', 'gestor']}><AdminAgenda /></RoleGuard></ProtectedRoute>} />
         <Route path="/admin/filas/configuracao" element={<ProtectedRoute><RoleGuard allowedRoles={['super_admin', 'admin']}><AdminConfiguracaoFilas /></RoleGuard></ProtectedRoute>} />
+        <Route path="/municipe/pedidos/iniciar/:serviceId" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><RequestJourneyAccountBoundary><RequestStartPage /></RequestJourneyAccountBoundary></RoleGuard></ProtectedRoute>} />
+        <Route path="/municipe/pedidos/rascunhos" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><RequestJourneyAccountBoundary><RequestDraftsPage /></RequestJourneyAccountBoundary></RoleGuard></ProtectedRoute>} />
+        <Route path="/municipe/pedidos/rascunhos/:draftId" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><RequestJourneyAccountBoundary><RequestDraftResolverPage /></RequestJourneyAccountBoundary></RoleGuard></ProtectedRoute>} />
         <Route path="/municipe/pedidos/:id" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><CitizenPedidoDetalhe /></RoleGuard></ProtectedRoute>} />
         <Route
           path="/municipe/documentos"
