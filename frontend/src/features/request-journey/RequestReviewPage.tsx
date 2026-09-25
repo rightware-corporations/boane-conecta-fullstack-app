@@ -72,7 +72,7 @@ export default function RequestReviewPage() {
     {uncertain && <Button variant="outline" onClick={refresh} disabled={busy}>Consultar versão actual</Button>}
     {snapshot && definition && !invalid && links && <div className="space-y-7">
       <section aria-labelledby="review-eligibility"><h2 id="review-eligibility" className="text-xl font-semibold">Elegibilidade</h2>
-        <p>Resultado: {snapshot.draft.eligibilityResult == null ? 'Ainda não verificado' : display(snapshot.draft.eligibilityResult)}</p>
+        <p>Resultado: {snapshot.draft.eligibilityResult == null ? 'Ainda não verificado' : (snapshot.draft.eligibilityResult as {eligible?: boolean}).eligible === true ? 'Elegível segundo os critérios publicados' : 'Elegibilidade não confirmada'}</p>
         <dl>{eligibility.map(rule => <div key={rule.key} className="border-b py-2"><dt className="font-medium">{rule.label}</dt><dd>{display(snapshot.draft.eligibilityAnswers[rule.key], rule.options)}</dd></div>)}</dl>
         <Link className="text-primary underline" to={`${base}/elegibilidade`}>Corrigir elegibilidade</Link></section>
       {steps.map(step => <section key={step.key} aria-label={step.title} className="space-y-2"><h2 className="text-xl font-semibold">{step.title}</h2>
