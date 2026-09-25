@@ -52,3 +52,7 @@ Um `GET` de draft ainda editável após timeout **não prova** que o POST não e
 | Scanner | `RECEIVED`, `SCANNING`, `VALID`, `REJECTED`, `EXPIRED`; só `VALID` anexa e valida. |
 | Sessão | GET retoma após refresh; mutação 401 não repetida automaticamente; reauth conserva rota permitida. |
 | Acessibilidade | Foco no título/resumo, ordem lógica, `aria-describedby`, anúncios moderados, 200% zoom e 320px. |
+
+## Estados FE-04b implementados
+
+`preparing → sending → submitted` apenas com confirmação do backend; `sending → checking → submitted` quando o GET próprio comprova commit; `sending → checking → unknown` quando ainda não há prova; `checking → conflict` se ETag, expiração ou estado invalidam a intenção. `unknown → checking` é uma acção explícita. Só em `unknown`, depois de GET que verifica ETag/estado, há repetição manual do POST com a chave/payload/If-Match originais. `conflict` preserva a intenção e pede reconciliação. S07 sempre reconstrói a confirmação por GET após reload. Alterações posteriores a S05 anulam a sua aceitação transitória pelo ETag; a versão publicada nova não substitui a definição fixada. Consulte `BOANE_CONECTA_FE04B_SUBMISSION_STATE_MACHINE.md` para matriz de transições e riscos.

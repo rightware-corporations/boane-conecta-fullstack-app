@@ -30,6 +30,8 @@ describe('FE-03b return to the active stage', () => {
   it.each([
     `/municipe/pedidos/rascunhos/${draftId}/elegibilidade`,
     `/municipe/pedidos/rascunhos/${draftId}/formulario?step=intro_1`,
+    `/municipe/pedidos/rascunhos/${draftId}/submissao`,
+    `/municipe/pedidos/rascunhos/${draftId}/confirmacao`,
   ])('restores citizen stage %s but never permits staff', path => {
     expect(destinationAfterLogin('municipe',path)).toBe(path);
     expect(destinationAfterLogin('admin',path)).toBe('/admin');
@@ -39,6 +41,7 @@ describe('FE-03b return to the active stage', () => {
     `/municipe/pedidos/rascunhos/${draftId}/formulario?step=..%2fadmin`,
     `/municipe/pedidos/rascunhos/bad/formulario`,
     `/municipe/pedidos/rascunhos/${draftId}/elegibilidade?step=x`,
+    `/municipe/pedidos/rascunhos/${draftId}/submissao?next=https://evil.example`,
   ])('rejects unsafe stage destination %s',path => {
     expect(destinationAfterLogin('municipe',path)).toBe('/municipe');
   });

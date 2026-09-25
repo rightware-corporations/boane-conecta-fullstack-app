@@ -2,7 +2,7 @@ import { api } from '@/lib/api';
 import type { ApiResponse } from '@/types';
 
 import { isUuid } from './types';
-import type { CitizenDocument, DraftDetail, DraftDocument, DraftValidation, RequestDefinition, RequestDraft } from './types';
+import type { CitizenDocument, DraftDetail, DraftDocument, DraftValidation, RequestDefinition, RequestDraft, SubmissionResponse, SubmittedRequestDetail } from './types';
 
 const draftsPath = '/citizen/request-drafts';
 
@@ -102,5 +102,24 @@ export const requestJourneyApi = {
     const validation = dataOf(response.body);
     if (validation.draft.id !== draftId) throw new Error('A validação não corresponde ao rascunho.');
     return { validation, detail: { draft: validation.draft, etag: response.etag } };
+  },
+  async submit(draftId: string, etag: string, idempotencyKey: string, declarationVersion: string): Promise<{ result: SubmissionResponse; status: 200 | 201 }> {
+    requireUuid(draftId);
+    if (!isUuid(idempotencyKey) || !declarationVersion.trim() || !etag) throw new Error('A intenção de submissão é inválida.');
+    const response = await api.postWithMetadata<ApiResponse<SubmissionResponse>>(`${draftsPath}/${draftId}/submit`,
+      { declarationVersion, declarationAccepted: true }, { headers: { 'If-Match': etag, 'Idempotency-Key': idempotencyKey } });
+    if (response.status !== 201 && response.status !== 200) throw new Error('A submissão não foi confirmada.');
+    const result = dataOf(response.body);
+    requireUuid(result.requestId);
+    if (!result.reference?.trim() || !result.status?.trim() || !result.submittedAt?.trim() ||
+        result.replayed !== (response.status === 200)) throw new Error('A resposta de submissão é inconsistente.');
+    return { result, status: response.status };
+  },
+  async submittedRequest(requestId: string): Promise<SubmittedRequestDetail> {
+    requireUuid(requestId);
+    const result = dataOf(await api.get<ApiResponse<SubmittedRequestDetail>>(`/citizen/requests/${requestId}`));
+    if (result.id !== requestId || !result.reference?.trim() || !result.status?.trim() || !result.submittedAt?.trim())
+      throw new Error('O pedido confirmado não corresponde ao rascunho.');
+    return result;
   },
 };

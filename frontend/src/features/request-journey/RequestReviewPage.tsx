@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
 import { DraftEditStatus } from './DraftEditStatus';
@@ -22,6 +22,7 @@ function display(value: unknown, choices?: {value:string;label:string}[]): strin
 
 export default function RequestReviewPage() {
   const { draftId = '' } = useParams();
+  const navigate = useNavigate();
   const { loading, error, detail, definition, retry } = useDraftDefinition(draftId);
   const [snapshot, setSnapshot] = useState<DraftDetail | null>(null);
   const [links, setLinks] = useState<DraftDocument[] | null>(null);
@@ -89,7 +90,12 @@ export default function RequestReviewPage() {
         <p className="whitespace-pre-wrap break-words">{definition.declarationText}</p>
         <label className="flex min-h-11 items-start gap-3"><input type="checkbox" className="mt-1 h-5 w-5" checked={accepted} disabled={!validation?.valid || busy || uncertain}
           onChange={event => setAccepted(event.target.checked)} />Li e aceito a declaração apresentada nesta versão.</label>
-        <p role="status">{validation?.valid && accepted ? 'Revisão pronta. A submissão ainda não está disponível nesta entrega.' : 'Valide o pedido e aceite a declaração para concluir a revisão.'}</p>
+        <p role="status">{validation?.valid && accepted ? 'Revisão concluída. Confirme o envio na próxima etapa.' : 'Valide o pedido e aceite a declaração para continuar.'}</p>
+        <Button disabled={!validation?.valid || !accepted || busy || uncertain || snapshot.draft.status !== 'READY_FOR_REVIEW'}
+          onClick={() => navigate(`${base}/submissao`, { state: { draftId, etag: snapshot.etag,
+            declarationVersion: definition.declarationVersion, schemaChecksum: definition.schemaChecksum, accepted: true } })}>
+          Continuar para submissão
+        </Button>
       </section>
     </div>}
     <Link to={base} className="mt-6 block text-primary underline">Voltar ao rascunho</Link>

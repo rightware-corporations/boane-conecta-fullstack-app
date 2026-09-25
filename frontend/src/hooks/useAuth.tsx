@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { authService } from '@/services/auth.service';
 import { getAuthToken, getRefreshToken, clearAuthTokens, AUTH_INVALIDATED_EVENT, AUTH_REFRESHED_EVENT } from '@/lib/api';
 import { AuthContext } from '@/hooks/auth-context';
+import { clearSubmissionIntents } from '@/features/request-journey/submission-intent';
 import type { UserRole, LoginCredentials, RegisterData, Profile, User } from '@/types';
 
 const permissionsByRole: Record<UserRole, string[]> = {
@@ -97,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async (): Promise<void> => {
     const revocation = authService.logout();
+    try { clearSubmissionIntents(); } catch { /* Storage may be unavailable; auth revocation must still proceed. */ }
     clearSession();
     await revocation;
   };
