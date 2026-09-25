@@ -46,4 +46,16 @@ export const requestJourneyApi = {
     if (detail.draft.id !== draftId) throw new Error('O rascunho devolvido não corresponde ao endereço.');
     return detail;
   },
+  async saveEligibility(draftId: string, etag: string, answers: Record<string, unknown>): Promise<DraftDetail> {
+    requireUuid(draftId);
+    const detail = draftResult(await api.putWithMetadata<ApiResponse<RequestDraft>>(`${draftsPath}/${draftId}/eligibility`, { answers }, { headers: { 'If-Match': etag } }), 200);
+    if (detail.draft.id !== draftId) throw new Error('O rascunho devolvido não corresponde ao endereço.');
+    return detail;
+  },
+  async saveAnswers(draftId: string, etag: string, stepKey: string, answers: Record<string, unknown>): Promise<DraftDetail> {
+    requireUuid(draftId);
+    const detail = draftResult(await api.patchWithMetadata<ApiResponse<RequestDraft>>(`${draftsPath}/${draftId}/answers`, { stepKey, answers }, { headers: { 'If-Match': etag } }), 200);
+    if (detail.draft.id !== draftId) throw new Error('O rascunho devolvido não corresponde ao endereço.');
+    return detail;
+  },
 };

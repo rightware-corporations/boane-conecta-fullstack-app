@@ -25,6 +25,25 @@ describe('FE-01 post-login destination', () => {
   );
 });
 
+describe('FE-03b return to the active stage', () => {
+  const draftId = '22222222-2222-4222-8222-222222222222';
+  it.each([
+    `/municipe/pedidos/rascunhos/${draftId}/elegibilidade`,
+    `/municipe/pedidos/rascunhos/${draftId}/formulario?step=intro_1`,
+  ])('restores citizen stage %s but never permits staff', path => {
+    expect(destinationAfterLogin('municipe',path)).toBe(path);
+    expect(destinationAfterLogin('admin',path)).toBe('/admin');
+  });
+  it.each([
+    `/municipe/pedidos/rascunhos/${draftId}/formulario?step=x&next=https://evil.example`,
+    `/municipe/pedidos/rascunhos/${draftId}/formulario?step=..%2fadmin`,
+    `/municipe/pedidos/rascunhos/bad/formulario`,
+    `/municipe/pedidos/rascunhos/${draftId}/elegibilidade?step=x`,
+  ])('rejects unsafe stage destination %s',path => {
+    expect(destinationAfterLogin('municipe',path)).toBe('/municipe');
+  });
+});
+
 const serviceId = '11111111-1111-4111-8111-111111111111';
 const draftId = '22222222-2222-4222-8222-222222222222';
 describe('FE-03a protected return destinations', () => {
