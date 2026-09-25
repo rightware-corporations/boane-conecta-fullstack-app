@@ -33,7 +33,13 @@ export function FieldRenderer({ field, value, error, disabled, onChange }: {
     case 'BOOLEAN': control = <select {...base} className="min-h-11 w-full rounded-md border border-input bg-surface px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={typeof value === 'boolean' ? String(value) : ''} onChange={event => onChange(event.target.value ? event.target.value === 'true' : null)}>
       <option value="">Seleccione uma resposta</option><option value="true">Sim</option><option value="false">Não</option>
     </select>; break;
-    case 'ADDRESS': control = <p role="alert">Este campo de endereço não tem estrutura publicada para edição segura. Os dados existentes foram preservados.</p>; break;
+    case 'ADDRESS': control = <fieldset disabled={disabled} aria-describedby={described} aria-invalid={!!error} className="space-y-3 rounded-md border border-border p-4">
+      <legend className="sr-only">{field.label}</legend>{field.addressFields?.map(part => <div key={part.key} className="space-y-1">
+        <label htmlFor={`${id}-${part.key}`} className="block text-sm font-medium">{part.label}{part.required ? ' *' : ''}</label>
+        <Input id={`${id}-${part.key}`} value={value && typeof value === 'object' && !Array.isArray(value) && typeof (value as Record<string, unknown>)[part.key] === 'string' ? (value as Record<string, string>)[part.key] : ''}
+          onChange={event => onChange({ ...(value && typeof value === 'object' && !Array.isArray(value) ? value : {}), [part.key]: event.target.value })} />
+      </div>)}
+    </fieldset>; break;
     default: { const exhaustive: never = field.type; return exhaustive; }
   }
   return <div className="space-y-2" data-field={field.key}>

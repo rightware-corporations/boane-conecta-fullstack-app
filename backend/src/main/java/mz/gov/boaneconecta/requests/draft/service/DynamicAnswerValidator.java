@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class DynamicAnswerValidator {
@@ -26,7 +27,7 @@ public class DynamicAnswerValidator {
             if (field == null) {
                 throw new IllegalArgumentException("Unknown form field: " + value.getKey());
             }
-            validateType(value.getKey(), field.path("type").asText(), value.getValue());
+            validateType(value.getKey(), field, value.getValue());
             merged.set(value.getKey(), value.getValue());
         }
         applyHiddenPolicies(fields, merged);
@@ -78,10 +79,11 @@ public class DynamicAnswerValidator {
         }
     }
 
-    private void validateType(String key, String type, JsonNode value) {
+    private void validateType(String key, JsonNode field, JsonNode value) {
         if (value == null || value.isNull()) {
             return;
         }
+        String type = field.path("type").asText();
         boolean valid = switch (type) {
             case "SHORT_TEXT", "LONG_TEXT", "EMAIL", "PHONE", "DATE", "SINGLE_SELECT" -> value.isTextual();
             case "INTEGER" -> value.isIntegralNumber();
@@ -93,6 +95,19 @@ public class DynamicAnswerValidator {
         };
         if (!valid) {
             throw new IllegalArgumentException("Invalid value type for form field: " + key);
+        }
+        if ("ADDRESS".equals(type)) {
+            JsonNode parts = field.path("addressFields");
+            if (!parts.isArray() || parts.isEmpty())
+                throw new IllegalArgumentException("Address structure unavailable for field: " + key);
+            Set<String> allowed = new java.util.HashSet<>();
+            for (JsonNode part : parts) allowed.add(part.path("key").asText());
+            var entries = value.fields();
+            while (entries.hasNext()) {
+                var entry = entries.next();
+                if (!allowed.contains(entry.getKey()) || !entry.getValue().isTextual())
+                    throw new IllegalArgumentException("Invalid address component for field: " + key);
+            }
         }
     }
 }

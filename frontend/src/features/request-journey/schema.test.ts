@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { isVisible, parseEligibility, parseSteps, stepPatch, validateStep } from './schema';
 
 const types = ['SHORT_TEXT','LONG_TEXT','EMAIL','PHONE','DATE','SINGLE_SELECT','INTEGER','DECIMAL','MULTI_SELECT','BOOLEAN','ADDRESS'];
-const field = (type: string, key = type) => ({ key, label: key, type, ...(type.includes('SELECT') ? { options: ['A','B'] } : {}) });
+const field = (type: string, key = type) => ({ key, label: key, type, ...(type.includes('SELECT') ? { options: ['A','B'] } : {}), ...(type === 'ADDRESS' ? { addressFields: [{key:'part',label:'Componente',required:true}] } : {}) });
 const schema = (fields: unknown[]) => ({ steps: [{ key: 'main', title: 'Publicado', fields }] });
 
 describe('C2 runtime contract', () => {
-  it.each(types)('recognizes backend type %s without inventing an address structure', type => {
+  it.each(types)('recognizes backend type %s with the published field contract', type => {
     const parsed = parseSteps(schema([field(type)]));
     expect(parsed[0].fields[0].type).toBe(type);
     if (type === 'ADDRESS') expect(parsed[0].fields[0].options).toBeUndefined();
@@ -29,9 +29,10 @@ describe('C2 runtime contract', () => {
     expect(validateStep(step,{email:'x'})).toMatchObject({email:expect.any(String)});
     expect(validateStep(step,{email:'valid@example.test'})).toEqual({});
   });
-  it('blocks only ADDRESS while preserving and saving a sibling field', () => {
+  it('validates address components and preserves sibling fields', () => {
     const step = parseSteps(schema([{...field('ADDRESS','location'),required:true},field('SHORT_TEXT','note')]))[0];
-    expect(validateStep(step,{note:'updated'})).toEqual({});
+    expect(validateStep(step,{note:'updated'})).toHaveProperty('location');
+    expect(validateStep(step,{location:{part:'valor'},note:'updated'})).toEqual({});
     expect(stepPatch(step,{location:{opaque:'unchanged'},note:'updated'},new Set(['note']))).toEqual({note:'updated'});
   });
   it('blocks eligibility rules without a published label and accepts explicit supported rules', () => {

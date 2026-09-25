@@ -18,7 +18,7 @@ export function destinationAfterLogin(role: UserRole | null, requested: unknown)
   if (role === 'municipe') {
     const start = /^\/municipe\/pedidos\/iniciar\/([^/]+)$/.exec(path);
     const draft = /^\/municipe\/pedidos\/rascunhos\/([^/]+)$/.exec(path);
-    const draftStage = /^\/municipe\/pedidos\/rascunhos\/([^/]+)\/(elegibilidade|formulario)$/.exec(path);
+    const draftStage = /^\/municipe\/pedidos\/rascunhos\/([^/]+)\/(elegibilidade|formulario|documentos|revisao)$/.exec(path);
     if (draftStage) return isUuid(draftStage[1]) && (requested === path ||
       draftStage[2] === 'formulario' && /^\?step=[A-Za-z0-9_-]{1,80}$/.test(requested.slice(path.length))) ? requested : fallback;
     if (start || draft) return isUuid((start || draft)![1]) && requested === path ? requested : fallback;
