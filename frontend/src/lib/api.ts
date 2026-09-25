@@ -98,7 +98,9 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(endpoint: string, options: RequestInit = {}, retried = false): Promise<T> {
+export type ApiResult<T> = { body: T; status: number; etag: string | null };
+
+async function requestWithMetadata<T>(endpoint: string, options: RequestInit = {}, retried = false): Promise<ApiResult<T>> {
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   const isMultipart = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers: Record<string, string> = {
@@ -122,14 +124,18 @@ async function request<T>(endpoint: string, options: RequestInit = {}, retried =
       // session, but only replay read-only requests; callers decide whether to
       // retry writes using their own idempotency contract.
       if (!retried && await refreshAccessToken()) {
-        if ((options.method || 'GET').toUpperCase() === 'GET') return request<T>(endpoint, options, true);
+        if ((options.method || 'GET').toUpperCase() === 'GET') return requestWithMetadata<T>(endpoint, options, true);
         throw new ApiError(response.status, response.statusText, errorData);
       }
       invalidateSession();
     }
     throw new ApiError(response.status, response.statusText, errorData);
   }
-  return data as T;
+  return { body: data as T, status: response.status, etag: response.headers.get('etag') };
+}
+
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  return (await requestWithMetadata<T>(endpoint, options)).body;
 }
 
 async function download(endpoint: string, retried = false): Promise<Blob> {
@@ -149,6 +155,8 @@ async function download(endpoint: string, retried = false): Promise<Blob> {
 }
 
 export const api = {
+  getWithMetadata: <T>(endpoint: string, options?: RequestInit) => requestWithMetadata<T>(endpoint, { ...options, method: 'GET' }),
+  postWithMetadata: <T>(endpoint: string, body?: unknown, options?: RequestInit) => requestWithMetadata<T>(endpoint, { ...options, method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
   get: <T>(endpoint: string, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'GET' }),
   post: <T>(endpoint: string, body?: unknown, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
   put: <T>(endpoint: string, body?: unknown, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'PUT', body: body === undefined ? undefined : JSON.stringify(body) }),

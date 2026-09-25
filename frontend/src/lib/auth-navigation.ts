@@ -1,4 +1,5 @@
 import type { UserRole } from '@/types';
+import { isUuid } from '@/features/request-journey/types';
 
 export function defaultRoute(role: UserRole | null): string {
   if (role === 'municipe') return '/municipe';
@@ -11,9 +12,16 @@ export function defaultRoute(role: UserRole | null): string {
 export function destinationAfterLogin(role: UserRole | null, requested: unknown): string {
   const fallback = defaultRoute(role);
   if (typeof requested !== 'string' || !requested.startsWith('/') || requested.startsWith('//') ||
-      requested.includes('\\') || /%2f|%5c/i.test(requested)) return fallback;
+      requested.includes('\\') || /%2f|%5c/i.test(requested) ||
+      [...requested].some(char => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)) return fallback;
   const path = requested.split(/[?#]/, 1)[0];
-  if (role === 'municipe' && /^\/municipe(?:\/(?:perfil|pedidos(?:\/[^/]+)?|documentos|licencas|pagamentos|agendamentos|notificacoes))?$/.test(path)) return requested;
+  if (role === 'municipe') {
+    const start = /^\/municipe\/pedidos\/iniciar\/([^/]+)$/.exec(path);
+    const draft = /^\/municipe\/pedidos\/rascunhos\/([^/]+)$/.exec(path);
+    if (start || draft) return isUuid((start || draft)![1]) && requested === path ? requested : fallback;
+    if (path === '/municipe/pedidos/rascunhos' && requested === path) return requested;
+    if (/^\/municipe(?:\/(?:perfil|pedidos(?:\/(?!iniciar$|rascunhos$)[^/]+)?|documentos|licencas|pagamentos|agendamentos|notificacoes))?$/.test(path)) return requested;
+  }
   const allStaff = ['super_admin', 'admin', 'editor', 'funcionario', 'gestor'];
   if (role && allStaff.includes(role)) {
     if (path === '/admin') return requested;

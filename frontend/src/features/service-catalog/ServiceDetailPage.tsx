@@ -10,6 +10,7 @@ import { Container, Section } from '@/design-system/primitives/layout';
 import { serviceDetailQuery } from './api/service-catalog.queries';
 import { audienceLabels, channelLabels, formatFee } from './lib/service-catalog';
 import type { MunicipalService } from './types';
+import { isUuid } from '@/features/request-journey/types';
 
 const availabilityTone = { available: 'success', suspended: 'warning', unavailable: 'danger' } as const;
 
@@ -33,7 +34,7 @@ export function ServiceDetailPage() {
 }
 
 function ServiceDetail({ service }: { service: MunicipalService }) {
-  const showOnline = service.availability === 'available' && service.channels.includes('online');
+  const showOnline = service.availability === 'available' && service.channels.includes('online') && isUuid(service.id);
   const showAppointment = service.availability === 'available' && service.channels.includes('in_person');
 
   return (
@@ -129,7 +130,7 @@ function ServiceDetail({ service }: { service: MunicipalService }) {
                   <div className="mt-5 grid gap-3">
                     {showOnline && (
                       <Button asChild>
-                        <Link to={`/municipe/servicos/${service.slug}/iniciar`}>Iniciar pedido</Link>
+                        <Link to={`/municipe/pedidos/iniciar/${service.id}`}>Verificar submissão digital</Link>
                       </Button>
                     )}
                     {showAppointment && (
