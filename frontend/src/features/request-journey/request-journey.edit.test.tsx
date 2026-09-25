@@ -67,4 +67,15 @@ describe('FE-03b S02/S03',()=>{
   expect(await screen.findByText(/Etapa desconhecida/)).toBeInTheDocument();
   expect(requestJourneyApi.saveAnswers).not.toHaveBeenCalled();
  });
+ it('saves a sibling field without editing or erasing a blocked address',async()=>{
+  vi.mocked(requestJourneyApi.definition).mockResolvedValue({...definition,schema:{steps:[{key:'intro',title:'Introdução',fields:[
+    {key:'name',type:'SHORT_TEXT',label:'Nome'}, {key:'address',type:'ADDRESS',label:'Endereço',required:true}
+  ]}]}} as never);
+  vi.mocked(requestJourneyApi.saveAnswers).mockResolvedValue({draft:{...draft,answers:{name:'new',address:{original:'preserved'}}},etag:'"5"'} as never);
+  at('formulario');
+  fireEvent.change(await screen.findByLabelText('Nome'),{target:{value:'new'}});
+  expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes('campos de endereço'))).toBe(true);
+  fireEvent.click(screen.getByRole('button',{name:'Guardar alterações'}));
+  await waitFor(()=>expect(requestJourneyApi.saveAnswers).toHaveBeenCalledWith(id,'"4"','intro',{name:'new'}));
+ });
 });

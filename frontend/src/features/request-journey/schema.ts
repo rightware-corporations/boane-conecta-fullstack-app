@@ -79,6 +79,7 @@ export function isVisible(field: Field, answers: Record<string, unknown>): boole
 export function validateStep(step: Step, answers: Record<string, unknown>): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const field of step.fields.filter(f => isVisible(f, answers))) {
+    if (field.type === 'ADDRESS') continue; // No published subfield contract exists yet.
     const value = answers[field.key];
     const empty = value == null || value === '' || (Array.isArray(value) && value.length === 0);
     if (field.required && empty) { errors[field.key] = 'Preencha este campo.'; continue; }

@@ -10,13 +10,13 @@
 - [x] S03 renderer tipado para tipos com contrato publicável, ordem do schema, campos condicionais, save manual PATCH somente da etapa, ETag confirmado.
 - [x] Em 409 preservar edição local; consultar draft actual e exigir decisão manual. Em 401/timeout não repetir PUT/PATCH.
 - [x] Backend limita PATCH e CLEAR_ON_HIDE à etapa activa, rejeitando chave de etapa alheia, com teste.
-- [x] `ADDRESS` sem estrutura e elegibilidade sem label/opções bloqueados de forma honesta; não usar JSON fabricado nem critérios municipais inventados.
+- [x] `ADDRESS` sem estrutura e elegibilidade sem label/opções bloqueados de forma honesta; `ADDRESS` bloqueia só o próprio campo, preservando outros campos da etapa; não usar JSON fabricado nem critérios municipais inventados.
 - [ ] Definir e validar contrato de `ADDRESS` para permitir edição acessível; validar também opções/visibilidade/perguntas ao publicar. Condição de completude dos onze tipos.
 - [ ] Resolver C1 antes de retoma de versão antiga (FE-04a): endpoint protegido para definição fixada.
 
 ## Gates
 
-- [x] Instalação reprodutível `npm ci`, lint, TypeScript, frontend 212/212 testes em 35 ficheiros, build e diff check local PASS; logs no handoff de entrega.
+- [x] Instalação reprodutível `npm ci`, lint, TypeScript, 214/214 testes frontend em 35 ficheiros, build e diff check local PASS; logs no handoff de entrega.
 - [ ] Java 21/Maven e backend PostgreSQL/migrations em CI no HEAD remoto; Java local é 17 e Maven não está instalado.
 - [ ] CI frontend no HEAD remoto final.
 - [ ] QA autenticada com Citizen A/B e verificação browser responsivo/teclado/zoom 200%: NOT RUN enquanto não houver ambiente/contas.

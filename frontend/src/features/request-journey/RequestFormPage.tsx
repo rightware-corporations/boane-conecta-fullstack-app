@@ -52,7 +52,7 @@ export default function RequestFormPage() {
     document.getElementById('main-content')?.focus();
   }
   async function save() {
-    if (!step || !snapshot || saving || conflict || unknown || addressBlocked) return;
+    if (!step || !snapshot || saving || conflict || unknown) return;
     const checked = validateStep(step, answers);
     const numeric = step.fields.filter(field => edited.has(field.key) && ['INTEGER','DECIMAL'].includes(field.type) && answers[field.key] !== null && answers[field.key] !== '' && (typeof answers[field.key] !== 'number' || !Number.isFinite(answers[field.key])));
     numeric.forEach(field => {checked[field.key]='Introduza um número válido.';});
@@ -83,8 +83,8 @@ export default function RequestFormPage() {
     {snapshot && !unsupported && canEdit && (!step ? <p role="alert">Etapa desconhecida. Escolha uma etapa publicada sem alterar o rascunho.</p> : <div className="space-y-6">
       <p role="status" className="text-sm text-muted-foreground">Etapa {index + 1} de {steps.length}: {step.title}</p>
       <h2 className="text-xl font-semibold">{step.title}</h2>
-      {addressBlocked && <p role="alert" className="border-l-4 border-warning p-3">Esta etapa inclui um endereço sem contrato de estrutura. Pode consultar os dados, mas não editá-los até ser publicado um formato seguro.</p>}
-      {step.fields.filter(field => isVisible(field, answers)).map(field => <FieldRenderer key={field.key} field={field} value={answers[field.key]} error={errors[field.key]} disabled={saving || !!conflict || unknown || !!addressBlocked} onChange={value => change(field.key,value)} />)}
+      {addressBlocked && <p role="alert" className="border-l-4 border-warning p-3">Os campos de endereço desta etapa não possuem estrutura publicada para edição segura. Os restantes campos podem ser guardados; não será possível concluir o pedido enquanto um endereço obrigatório estiver pendente.</p>}
+      {step.fields.filter(field => isVisible(field, answers)).map(field => <FieldRenderer key={field.key} field={field} value={answers[field.key]} error={errors[field.key]} disabled={saving || !!conflict || unknown || field.type === 'ADDRESS'} onChange={value => change(field.key,value)} />)}
       {message && <div ref={summaryRef} tabIndex={-1} role={errors && Object.values(errors).some(Boolean) || conflict || unknown ? 'alert' : 'status'} className="border-l-4 border-primary p-3">{message}</div>}
       {conflict && <div role="alert" className="space-y-3 border-l-4 border-warning p-4">
         <p>O servidor está na versão {conflict.draft.version}. Respostas locais ainda não confirmadas:</p>
@@ -94,7 +94,7 @@ export default function RequestFormPage() {
       </div>}
       {unknown && !conflict && <Button variant="outline" onClick={async () => { try { setConflict(await requestJourneyApi.detail(draftId)); setMessage('Compare as versões antes de qualquer nova escrita.'); } catch { setMessage('A consulta falhou; mantenha as respostas desta página.'); } }}>Consultar versão actual</Button>}
       <div className="flex flex-wrap gap-3 border-t border-border pt-5">
-        <Button onClick={save} disabled={!dirty || saving || !!conflict || unknown || !!addressBlocked}>{saving ? 'A guardar...' : 'Guardar alterações'}</Button>
+        <Button onClick={save} disabled={!dirty || saving || !!conflict || unknown}>{saving ? 'A guardar...' : 'Guardar alterações'}</Button>
         {dirty && <Button variant="outline" disabled={saving} onClick={() => {
           if (window.confirm('Descartar as alterações não guardadas desta etapa?')) {
             setAnswers(snapshot.draft.answers); setEdited(new Set()); setConflict(null); setUnknown(false); setErrors({}); setMessage('Alterações locais descartadas.');

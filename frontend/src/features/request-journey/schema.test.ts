@@ -29,6 +29,11 @@ describe('C2 runtime contract', () => {
     expect(validateStep(step,{email:'x'})).toMatchObject({email:expect.any(String)});
     expect(validateStep(step,{email:'valid@example.test'})).toEqual({});
   });
+  it('blocks only ADDRESS while preserving and saving a sibling field', () => {
+    const step = parseSteps(schema([{...field('ADDRESS','location'),required:true},field('SHORT_TEXT','note')]))[0];
+    expect(validateStep(step,{note:'updated'})).toEqual({});
+    expect(stepPatch(step,{location:{opaque:'unchanged'},note:'updated'},new Set(['note']))).toEqual({note:'updated'});
+  });
   it('blocks eligibility rules without a published label and accepts explicit supported rules', () => {
     expect(() => parseEligibility([{key:'resident',operator:'TRUTHY'}])).toThrow('rótulo');
     expect(parseEligibility([{key:'resident',label:'É residente?',operator:'TRUTHY'}])[0].options).toHaveLength(2);
