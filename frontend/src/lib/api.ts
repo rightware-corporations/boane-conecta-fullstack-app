@@ -157,6 +157,8 @@ async function download(endpoint: string, retried = false): Promise<Blob> {
 export const api = {
   getWithMetadata: <T>(endpoint: string, options?: RequestInit) => requestWithMetadata<T>(endpoint, { ...options, method: 'GET' }),
   postWithMetadata: <T>(endpoint: string, body?: unknown, options?: RequestInit) => requestWithMetadata<T>(endpoint, { ...options, method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
+  putWithMetadata: <T>(endpoint: string, body: unknown, options?: RequestInit) => requestWithMetadata<T>(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+  patchWithMetadata: <T>(endpoint: string, body: unknown, options?: RequestInit) => requestWithMetadata<T>(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
   get: <T>(endpoint: string, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'GET' }),
   post: <T>(endpoint: string, body?: unknown, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
   put: <T>(endpoint: string, body?: unknown, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'PUT', body: body === undefined ? undefined : JSON.stringify(body) }),

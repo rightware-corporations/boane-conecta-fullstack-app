@@ -121,7 +121,8 @@ public class RequestDraftService {
         ObjectNode merged = answerValidator.mergePartial(
                 draft.getFormVersion().getSchema(),
                 draft.getAnswers(),
-                answers);
+                answers,
+                stepKey);
         draft.saveAnswers(merged, stepKey.trim(), Instant.now());
         return toResponse(draftRepository.saveAndFlush(draft));
     }

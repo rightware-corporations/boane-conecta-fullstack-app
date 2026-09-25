@@ -9,6 +9,8 @@ import type { AuthContextType, UserRole } from '@/types';
 vi.mock('@/features/request-journey/RequestStartPage', () => ({ default: () => <h2>Rota S01</h2> }));
 vi.mock('@/features/request-journey/RequestDraftsPage', () => ({ default: () => <h2>Rota S08</h2> }));
 vi.mock('@/features/request-journey/RequestDraftResolverPage', () => ({ default: () => <h2>Resolvedor de rascunho</h2> }));
+vi.mock('@/features/request-journey/RequestEligibilityPage', () => ({ default: () => <h2>Rota S02</h2> }));
+vi.mock('@/features/request-journey/RequestFormPage', () => ({ default: () => <h2>Rota S03</h2> }));
 vi.mock('@/pages/citizen/CitizenPedidoDetalhe', () => ({ default: () => <h2>Detalhe submetido</h2> }));
 vi.mock('@/pages/Auth', () => ({ default: () => <h2>Login FE03a</h2> }));
 
@@ -29,6 +31,8 @@ describe('FE-03a production route tree', () => {
     [`/municipe/pedidos/iniciar/${serviceId}`, 'Rota S01'],
     ['/municipe/pedidos/rascunhos', 'Rota S08'],
     [`/municipe/pedidos/rascunhos/${draftId}`, 'Resolvedor de rascunho'],
+    [`/municipe/pedidos/rascunhos/${draftId}/elegibilidade`, 'Rota S02'],
+    [`/municipe/pedidos/rascunhos/${draftId}/formulario`, 'Rota S03'],
     [`/municipe/pedidos/${draftId}`, 'Detalhe submetido'],
   ])('keeps %s mapped to %s for CITIZEN', async (path, title) => {
     route(path, 'municipe');

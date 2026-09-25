@@ -18,6 +18,9 @@ export function destinationAfterLogin(role: UserRole | null, requested: unknown)
   if (role === 'municipe') {
     const start = /^\/municipe\/pedidos\/iniciar\/([^/]+)$/.exec(path);
     const draft = /^\/municipe\/pedidos\/rascunhos\/([^/]+)$/.exec(path);
+    const draftStage = /^\/municipe\/pedidos\/rascunhos\/([^/]+)\/(elegibilidade|formulario)$/.exec(path);
+    if (draftStage) return isUuid(draftStage[1]) && (requested === path ||
+      draftStage[2] === 'formulario' && /^\?step=[A-Za-z0-9_-]{1,80}$/.test(requested.slice(path.length))) ? requested : fallback;
     if (start || draft) return isUuid((start || draft)![1]) && requested === path ? requested : fallback;
     if (path === '/municipe/pedidos/rascunhos' && requested === path) return requested;
     if (/^\/municipe(?:\/(?:perfil|pedidos(?:\/(?!iniciar$|rascunhos$)[^/]+)?|documentos|licencas|pagamentos|agendamentos|notificacoes))?$/.test(path)) return requested;

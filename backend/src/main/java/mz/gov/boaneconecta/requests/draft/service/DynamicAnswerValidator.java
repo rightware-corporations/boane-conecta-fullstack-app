@@ -10,11 +10,11 @@ import java.util.Map;
 
 @Component
 public class DynamicAnswerValidator {
-    public ObjectNode mergePartial(JsonNode schema, JsonNode current, JsonNode patch) {
+    public ObjectNode mergePartial(JsonNode schema, JsonNode current, JsonNode patch, String stepKey) {
         if (patch == null || !patch.isObject()) {
             throw new IllegalArgumentException("Draft answers must be an object");
         }
-        Map<String, JsonNode> fields = fieldsByKey(schema);
+        Map<String, JsonNode> fields = fieldsByStep(schema, stepKey);
         ObjectNode merged = current != null && current.isObject()
                 ? ((ObjectNode) current).deepCopy()
                 : com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();
@@ -31,6 +31,17 @@ public class DynamicAnswerValidator {
         }
         applyHiddenPolicies(fields, merged);
         return merged;
+    }
+
+    private Map<String, JsonNode> fieldsByStep(JsonNode schema, String stepKey) {
+        Map<String, JsonNode> fields = new HashMap<>();
+        for (JsonNode step : schema.path("steps")) {
+            if (!stepKey.equals(step.path("key").asText())) continue;
+            for (JsonNode field : step.path("fields")) {
+                fields.put(field.path("key").asText(), field);
+            }
+        }
+        return fields;
     }
 
     public Map<String, JsonNode> fieldsByKey(JsonNode schema) {

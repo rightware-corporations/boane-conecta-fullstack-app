@@ -19,10 +19,42 @@ class DynamicRequestRulesTest {
                 """);
         var validator = new DynamicAnswerValidator();
         var current = mapper.readTree("{\"hasDetails\":true,\"details\":\"kept\"}");
-        var hidden = validator.mergePartial(schema, current, mapper.readTree("{\"hasDetails\":false}"));
+        var hidden = validator.mergePartial(schema, current, mapper.readTree("{\"hasDetails\":false}"), "main");
         assertThat(hidden.has("details")).isFalse();
-        assertThatThrownBy(() -> validator.mergePartial(schema, hidden, mapper.readTree("{\"invented\":1}")))
+        assertThatThrownBy(() -> validator.mergePartial(schema, hidden, mapper.readTree("{\"invented\":1}"), "main"))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void stepSaveRejectsOtherStepKeysAndDoesNotClearOtherStepAnswers() throws Exception {
+        var schema = mapper.readTree("""
+                {"steps":[{"key":"one","fields":[{"key":"switch","type":"BOOLEAN"}]},
+                  {"key":"two","fields":[{"key":"details","type":"SHORT_TEXT",
+                    "visibleWhen":{"field":"switch","equals":true},"hiddenValuePolicy":"CLEAR_ON_HIDE"}]}]}
+                """);
+        var validator = new DynamicAnswerValidator();
+        var current = mapper.readTree("{\"switch\":true,\"details\":\"preserve until step two\"}");
+        var merged = validator.mergePartial(schema, current, mapper.readTree("{\"switch\":false}"), "one");
+        assertThat(merged.path("details").asText()).isEqualTo("preserve until step two");
+        assertThatThrownBy(() -> validator.mergePartial(schema, merged,
+                mapper.readTree("{\"details\":\"overwrite\"}"), "one"))
+                .isInstanceOf(IllegalArgumentException.class);
+        var cleaned = validator.mergePartial(schema, merged, mapper.readTree("{}"), "two");
+        assertThat(cleaned.has("details")).isFalse();
+    }
+
+    @Test
+    void preserveOnHideKeepsTheAnswerWhenItsOwnStepIsSaved() throws Exception {
+        var schema = mapper.readTree("""
+                {"steps":[{"key":"main","fields":[
+                  {"key":"toggle","type":"BOOLEAN"},
+                  {"key":"details","type":"SHORT_TEXT","visibleWhen":{"field":"toggle","equals":true},
+                   "hiddenValuePolicy":"PRESERVE_ON_HIDE"}]}]}
+                """);
+        var validator = new DynamicAnswerValidator();
+        var current = mapper.readTree("{\"toggle\":true,\"details\":\"retained\"}");
+        var result = validator.mergePartial(schema, current, mapper.readTree("{\"toggle\":false}"), "main");
+        assertThat(result.path("details").asText()).isEqualTo("retained");
     }
 
     @Test

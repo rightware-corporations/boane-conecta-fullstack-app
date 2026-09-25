@@ -80,3 +80,21 @@ describe('FE-03a backend transport contracts', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('FE-03b mutation transport', () => {
+  it.each(['PUT','PATCH'] as const)('preserves %s status and ETag, without replay on 401', async method => {
+    setAuthToken('old'); setRefreshToken('refresh');
+    const fetchMock = vi.fn().mockResolvedValueOnce(json({message:'Expired'},401))
+      .mockResolvedValueOnce(json({success:true,data:{accessToken:'new',refreshToken:'new-refresh'}}));
+    vi.stubGlobal('fetch',fetchMock);
+    const call = method === 'PUT' ? requestJourneyApi.saveEligibility(draftId,'"4"',{resident:true}) : requestJourneyApi.saveAnswers(draftId,'"4"','intro',{name:'new'});
+    await expect(call).rejects.toMatchObject({status:401});
+    expect(fetchMock.mock.calls.filter(([,request])=>request.method===method)).toHaveLength(1);
+    expect(fetchMock.mock.calls[0][1].headers['If-Match']).toBe('"4"');
+  });
+  it('accepts 200 and a new ETag for confirmed PATCH/PUT',async()=>{
+    vi.stubGlobal('fetch',vi.fn().mockResolvedValue(json({success:true,data:draft},200,'"5"')));
+    expect((await requestJourneyApi.saveAnswers(draftId,'"4"','intro',{name:'new'})).etag).toBe('"5"');
+    expect((await requestJourneyApi.saveEligibility(draftId,'"4"',{resident:true})).etag).toBe('"5"');
+  });
+});
