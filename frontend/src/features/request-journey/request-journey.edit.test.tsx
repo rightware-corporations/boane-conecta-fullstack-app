@@ -7,15 +7,15 @@ import RequestFormPage from './RequestFormPage';
 import { requestJourneyApi } from './request-journey.api';
 
 vi.mock('./RequestJourneyShell', () => ({ RequestJourneyShell: ({ title, children }: {title:string;children:React.ReactNode}) => <main id="main-content" tabIndex={-1}><h1>{title}</h1>{children}</main> }));
-vi.mock('./request-journey.api', () => ({ requestJourneyApi: { detail:vi.fn(),definition:vi.fn(),saveEligibility:vi.fn(),saveAnswers:vi.fn() } }));
+vi.mock('./request-journey.api', () => ({ requestJourneyApi: { detail:vi.fn(),pinnedDefinition:vi.fn(),saveEligibility:vi.fn(),saveAnswers:vi.fn() } }));
 const id='22222222-2222-4222-8222-222222222222', serviceId='11111111-1111-4111-8111-111111111111';
 const draft={ id,serviceId,serviceVersionId:serviceId,formVersionId:id,status:'IN_PROGRESS',expiresAt:'2099-01-01T00:00:00Z',currentStepKey:'intro',answers:{name:'old'},eligibilityAnswers:{},eligibilityResult:{eligible:true,blockingReasons:[],advisories:[]},version:4 };
 const definition={serviceId,serviceVersionId:serviceId,formVersionId:id,serviceTitle:'Serviço de QA',schema:{steps:[{key:'intro',title:'Introdução',fields:[{key:'name',type:'SHORT_TEXT',label:'Nome',required:true}]}]},eligibility:[{key:'resident',label:'Residente?',operator:'TRUTHY'}]};
 const at=(page:'formulario'|'elegibilidade',path=`/municipe/pedidos/rascunhos/${id}/${page}`)=>render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/municipe/pedidos/rascunhos/:draftId/formulario" element={<RequestFormPage/>}/><Route path="/municipe/pedidos/rascunhos/:draftId/elegibilidade" element={<RequestEligibilityPage/>}/></Routes></MemoryRouter>);
-beforeEach(()=>{ vi.clearAllMocks(); vi.mocked(requestJourneyApi.detail).mockResolvedValue({draft,etag:'"4"'} as never); vi.mocked(requestJourneyApi.definition).mockResolvedValue(definition as never); });
+beforeEach(()=>{ vi.clearAllMocks(); vi.mocked(requestJourneyApi.detail).mockResolvedValue({draft,etag:'"4"'} as never); vi.mocked(requestJourneyApi.pinnedDefinition).mockResolvedValue(definition as never); });
 describe('FE-03b S02/S03',()=>{
  it('blocks an old pinned definition before rendering answers or mutating',async()=>{
-  vi.mocked(requestJourneyApi.definition).mockResolvedValue({...definition,formVersionId:serviceId} as never);
+  vi.mocked(requestJourneyApi.pinnedDefinition).mockResolvedValue({...definition,formVersionId:serviceId} as never);
   at('formulario');
   expect(await screen.findByText(/versão fixada deste rascunho não está disponível/)).toBeInTheDocument();
   expect(screen.queryByLabelText('Nome *')).not.toBeInTheDocument();
@@ -68,13 +68,13 @@ describe('FE-03b S02/S03',()=>{
   expect(requestJourneyApi.saveAnswers).not.toHaveBeenCalled();
  });
  it('saves a sibling field without editing or erasing a blocked address',async()=>{
-  vi.mocked(requestJourneyApi.definition).mockResolvedValue({...definition,schema:{steps:[{key:'intro',title:'Introdução',fields:[
-    {key:'name',type:'SHORT_TEXT',label:'Nome'}, {key:'address',type:'ADDRESS',label:'Endereço',required:true}
+  vi.mocked(requestJourneyApi.pinnedDefinition).mockResolvedValue({...definition,schema:{steps:[{key:'intro',title:'Introdução',fields:[
+    {key:'name',type:'SHORT_TEXT',label:'Nome'}, {key:'address',type:'ADDRESS',label:'Endereço',required:true,addressFields:[{key:'part',label:'Elemento'}]}
   ]}]}} as never);
   vi.mocked(requestJourneyApi.saveAnswers).mockResolvedValue({draft:{...draft,answers:{name:'new',address:{original:'preserved'}}},etag:'"5"'} as never);
   at('formulario');
   fireEvent.change(await screen.findByLabelText('Nome'),{target:{value:'new'}});
-  expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes('campos de endereço'))).toBe(true);
+  expect(screen.getByLabelText('Elemento')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button',{name:'Guardar alterações'}));
   await waitFor(()=>expect(requestJourneyApi.saveAnswers).toHaveBeenCalledWith(id,'"4"','intro',{name:'new'}));
  });

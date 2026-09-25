@@ -5,6 +5,7 @@ export type FieldType = 'SHORT_TEXT' | 'LONG_TEXT' | 'EMAIL' | 'PHONE' | 'DATE' 
   'SINGLE_SELECT' | 'INTEGER' | 'DECIMAL' | 'MULTI_SELECT' | 'BOOLEAN' | 'ADDRESS';
 export type Field = { key: string; label: string; type: FieldType; required: boolean; helpText?: string;
   options?: { value: string; label: string }[]; visibleWhen?: { field: string; equals: Scalar };
+  addressFields?: { key: string; label: string; required: boolean; minLength?: number; maxLength?: number }[];
   hiddenValuePolicy: 'CLEAR_ON_HIDE' | 'PRESERVE_ON_HIDE'; minLength?: number; maxLength?: number };
 export type Step = { key: string; title: string; fields: Field[] };
 export type EligibilityRule = { key: string; label: string; required: boolean; operator: 'TRUTHY' | 'EQUALS' | 'NOT_EQUALS' | 'IN'; expected?: Scalar | Scalar[];
@@ -42,7 +43,19 @@ export function parseSteps(raw: unknown): Step[] {
       const policy = rawField.hiddenValuePolicy ?? 'CLEAR_ON_HIDE';
       if (policy !== 'CLEAR_ON_HIDE' && policy !== 'PRESERVE_ON_HIDE') throw new UnsupportedDefinition('Uma política de campo oculto é inválida.');
       const select = type === 'SINGLE_SELECT' || type === 'MULTI_SELECT';
+      let addressFields: Field['addressFields'];
+      if (type === 'ADDRESS') {
+        if (!Array.isArray(rawField.addressFields) || !rawField.addressFields.length) throw new UnsupportedDefinition('Um endereço não possui componentes publicados.');
+        addressFields = rawField.addressFields.map(part => {
+          if (!obj(part) || !nonEmpty(part.key) || !nonEmpty(part.label)) throw new UnsupportedDefinition('Componente de endereço sem chave ou rótulo.');
+          return { key: part.key, label: part.label, required: part.required === true,
+            minLength: Number.isInteger(part.minLength) ? part.minLength as number : undefined,
+            maxLength: Number.isInteger(part.maxLength) ? part.maxLength as number : undefined };
+        });
+        if (new Set(addressFields.map(part => part.key)).size !== addressFields.length) throw new UnsupportedDefinition('O endereço repete um componente.');
+      }
       return { key: rawField.key, label: rawField.label, type, required: rawField.required === true,
+        addressFields,
         helpText: typeof rawField.helpText === 'string' ? rawField.helpText : undefined,
         options: select ? optionsOf(rawField.options) : undefined,
         visibleWhen: condition ? { field: (condition as Record<string, unknown>).field as string, equals: (condition as Record<string, unknown>).equals as Scalar } : undefined,
@@ -79,11 +92,20 @@ export function isVisible(field: Field, answers: Record<string, unknown>): boole
 export function validateStep(step: Step, answers: Record<string, unknown>): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const field of step.fields.filter(f => isVisible(f, answers))) {
-    if (field.type === 'ADDRESS') continue; // No published subfield contract exists yet.
     const value = answers[field.key];
-    const empty = value == null || value === '' || (Array.isArray(value) && value.length === 0);
+    const empty = value == null || value === '' || (Array.isArray(value) && value.length === 0) || (field.type === 'ADDRESS' && typeof value === 'object' && Object.values(value).every(part => part === ''));
     if (field.required && empty) { errors[field.key] = 'Preencha este campo.'; continue; }
     if (empty) continue;
+    if (field.type === 'ADDRESS') {
+      if (!obj(value) || !field.addressFields || Object.keys(value).some(key => !field.addressFields?.some(part => part.key === key) || typeof value[key] !== 'string')) {
+        errors[field.key] = 'O endereço contém elementos inválidos.'; continue;
+      }
+      for (const part of field.addressFields) {
+        const text = value[part.key] as string | undefined;
+        if ((part.required && !text?.trim()) || (text && ((part.minLength !== undefined && text.length < part.minLength) || (part.maxLength !== undefined && text.length > part.maxLength))))
+          errors[field.key] = 'Verifique os elementos obrigatórios e o comprimento do endereço.';
+      }
+    }
     if (typeof value === 'string' && field.minLength !== undefined && value.length < field.minLength) errors[field.key] = 'O valor é demasiado curto.';
     if (typeof value === 'string' && field.maxLength !== undefined && value.length > field.maxLength) errors[field.key] = 'O valor excede o limite permitido.';
     if (field.type === 'EMAIL' && typeof value === 'string' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) errors[field.key] = 'Introduza um endereço de email válido.';

@@ -50,6 +50,8 @@ const RequestDraftsPage = lazy(() => import("./features/request-journey/RequestD
 const RequestDraftResolverPage = lazy(() => import("./features/request-journey/RequestDraftResolverPage"));
 const RequestEligibilityPage = lazy(() => import("./features/request-journey/RequestEligibilityPage"));
 const RequestFormPage = lazy(() => import("./features/request-journey/RequestFormPage"));
+const RequestDocumentsPage = lazy(() => import("./features/request-journey/RequestDocumentsPage"));
+const RequestReviewPage = lazy(() => import("./features/request-journey/RequestReviewPage"));
 const CitizenDocumentos = lazy(() => import("./pages/citizen/CitizenDocumentos"));
 const CitizenLicencas = lazy(() => import("./pages/citizen/CitizenLicencas"));
 const CitizenPagamentos = lazy(() => import("./pages/citizen/CitizenPagamentos"));
@@ -197,6 +199,8 @@ export function AppRoutes() {
         <Route path="/municipe/pedidos/rascunhos" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><RequestJourneyAccountBoundary><RequestDraftsPage /></RequestJourneyAccountBoundary></RoleGuard></ProtectedRoute>} />
         <Route path="/municipe/pedidos/rascunhos/:draftId/elegibilidade" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><RequestJourneyAccountBoundary><RequestEligibilityPage /></RequestJourneyAccountBoundary></RoleGuard></ProtectedRoute>} />
         <Route path="/municipe/pedidos/rascunhos/:draftId/formulario" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><RequestJourneyAccountBoundary><RequestFormPage /></RequestJourneyAccountBoundary></RoleGuard></ProtectedRoute>} />
+        <Route path="/municipe/pedidos/rascunhos/:draftId/documentos" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><RequestJourneyAccountBoundary><RequestDocumentsPage /></RequestJourneyAccountBoundary></RoleGuard></ProtectedRoute>} />
+        <Route path="/municipe/pedidos/rascunhos/:draftId/revisao" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><RequestJourneyAccountBoundary><RequestReviewPage /></RequestJourneyAccountBoundary></RoleGuard></ProtectedRoute>} />
         <Route path="/municipe/pedidos/rascunhos/:draftId" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><RequestJourneyAccountBoundary><RequestDraftResolverPage /></RequestJourneyAccountBoundary></RoleGuard></ProtectedRoute>} />
         <Route path="/municipe/pedidos/:id" element={<ProtectedRoute><RoleGuard allowedRoles={['municipe']}><CitizenPedidoDetalhe /></RoleGuard></ProtectedRoute>} />
         <Route

@@ -37,7 +37,6 @@ export default function RequestFormPage() {
   const index = requestedStep && stepIndex === -1 ? -1 : Math.max(0, stepIndex);
   const step = steps[index];
   const canEdit = !!snapshot && (!eligibilityRequired || snapshot.draft.eligibilityResult != null && (snapshot.draft.eligibilityResult as {eligible?: boolean}).eligible === true);
-  const addressBlocked = step?.fields.some(field => field.type === 'ADDRESS');
   const dirty = edited.size > 0;
   useEffect(() => {
     if (!dirty) return;
@@ -54,6 +53,7 @@ export default function RequestFormPage() {
   async function save() {
     if (!step || !snapshot || saving || conflict || unknown) return;
     const checked = validateStep(step, answers);
+    for (const field of step.fields) if (field.type === 'ADDRESS' && !edited.has(field.key)) delete checked[field.key];
     const numeric = step.fields.filter(field => edited.has(field.key) && ['INTEGER','DECIMAL'].includes(field.type) && answers[field.key] !== null && answers[field.key] !== '' && (typeof answers[field.key] !== 'number' || !Number.isFinite(answers[field.key])));
     numeric.forEach(field => {checked[field.key]='Introduza um número válido.';});
     if (Object.keys(checked).length) { setErrors(checked); setMessage('Corrija os campos indicados antes de guardar.'); summaryRef.current?.focus(); return; }
@@ -83,8 +83,7 @@ export default function RequestFormPage() {
     {snapshot && !unsupported && canEdit && (!step ? <p role="alert">Etapa desconhecida. Escolha uma etapa publicada sem alterar o rascunho.</p> : <div className="space-y-6">
       <p role="status" className="text-sm text-muted-foreground">Etapa {index + 1} de {steps.length}: {step.title}</p>
       <h2 className="text-xl font-semibold">{step.title}</h2>
-      {addressBlocked && <p role="alert" className="border-l-4 border-warning p-3">Os campos de endereço desta etapa não possuem estrutura publicada para edição segura. Os restantes campos podem ser guardados; não será possível concluir o pedido enquanto um endereço obrigatório estiver pendente.</p>}
-      {step.fields.filter(field => isVisible(field, answers)).map(field => <FieldRenderer key={field.key} field={field} value={answers[field.key]} error={errors[field.key]} disabled={saving || !!conflict || unknown || field.type === 'ADDRESS'} onChange={value => change(field.key,value)} />)}
+      {step.fields.filter(field => isVisible(field, answers)).map(field => <FieldRenderer key={field.key} field={field} value={answers[field.key]} error={errors[field.key]} disabled={saving || !!conflict || unknown} onChange={value => change(field.key,value)} />)}
       {message && <div ref={summaryRef} tabIndex={-1} role={errors && Object.values(errors).some(Boolean) || conflict || unknown ? 'alert' : 'status'} className="border-l-4 border-primary p-3">{message}</div>}
       {conflict && <div role="alert" className="space-y-3 border-l-4 border-warning p-4">
         <p>O servidor está na versão {conflict.draft.version}. Respostas locais ainda não confirmadas:</p>
@@ -103,7 +102,7 @@ export default function RequestFormPage() {
         {index > 0 && <Button variant="outline" onClick={() => navigateStep(index-1)}>Etapa anterior</Button>}
         {index < steps.length - 1 && <Button variant="outline" onClick={() => navigateStep(index+1)}>Próxima etapa</Button>}
       </div>
-      {index === steps.length - 1 && <p role="status">A etapa de documentos ainda não foi implementada. As respostas confirmadas permanecem guardadas.</p>}
+      {index === steps.length - 1 && <Button asChild variant="outline"><Link to={`${returnPath}/documentos`}>Continuar para documentos</Link></Button>}
     </div>)}
     <Link className="mt-6 block text-primary underline" to={returnPath} onClick={event => {
       if ((dirty || saving || unknown) && !window.confirm('Sair desta etapa? As alterações locais não confirmadas serão perdidas.')) event.preventDefault();

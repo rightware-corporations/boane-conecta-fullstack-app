@@ -9,7 +9,7 @@ import RequestDraftResolverPage from './RequestDraftResolverPage';
 import { requestJourneyApi } from './request-journey.api';
 
 vi.mock('./RequestJourneyShell', () => ({ RequestJourneyShell: ({ title, children }: { title: string; children: React.ReactNode }) => <main><h1>{title}</h1>{children}</main> }));
-vi.mock('./request-journey.api', () => ({ requestJourneyApi: { definition: vi.fn(), createOrResume: vi.fn(), list: vi.fn(), detail: vi.fn() } }));
+vi.mock('./request-journey.api', () => ({ requestJourneyApi: { definition: vi.fn(), pinnedDefinition: vi.fn(), createOrResume: vi.fn(), list: vi.fn(), detail: vi.fn() } }));
 
 const serviceId = '11111111-1111-4111-8111-111111111111';
 const draftId = '22222222-2222-4222-8222-222222222222';
@@ -25,7 +25,7 @@ function startAt(path: string) {
   </Routes></MemoryRouter>);
 }
 
-beforeEach(() => { vi.clearAllMocks(); vi.mocked(requestJourneyApi.definition).mockResolvedValue(definition as never); vi.mocked(requestJourneyApi.list).mockResolvedValue([]); });
+beforeEach(() => { vi.clearAllMocks(); vi.mocked(requestJourneyApi.definition).mockResolvedValue(definition as never); vi.mocked(requestJourneyApi.pinnedDefinition).mockResolvedValue(definition as never); vi.mocked(requestJourneyApi.list).mockResolvedValue([]); });
 
 describe('FE-03a S01 and S08', () => {
   it('checks publication and shows a single safe action, then navigates on confirmed 201', async () => {
@@ -81,7 +81,7 @@ describe('FE-03a S01 and S08', () => {
   });
   it('does not render answers or a new schema for an old pinned draft', async () => {
     vi.mocked(requestJourneyApi.detail).mockResolvedValue({ draft, etag: '"4"' } as never);
-    vi.mocked(requestJourneyApi.definition).mockResolvedValue({ ...definition, formVersionId: serviceId } as never);
+    vi.mocked(requestJourneyApi.pinnedDefinition).mockResolvedValue({ ...definition, formVersionId: serviceId } as never);
     startAt(`/municipe/pedidos/rascunhos/${draftId}`);
     expect(await screen.findByText('Continuação indisponível')).toBeInTheDocument();
     expect(screen.queryByText('Continuação do pedido preparada', { exact: false })).not.toBeInTheDocument();

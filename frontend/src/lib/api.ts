@@ -159,6 +159,8 @@ export const api = {
   postWithMetadata: <T>(endpoint: string, body?: unknown, options?: RequestInit) => requestWithMetadata<T>(endpoint, { ...options, method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
   putWithMetadata: <T>(endpoint: string, body: unknown, options?: RequestInit) => requestWithMetadata<T>(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
   patchWithMetadata: <T>(endpoint: string, body: unknown, options?: RequestInit) => requestWithMetadata<T>(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
+  deleteWithMetadata: <T>(endpoint: string, options?: RequestInit) => requestWithMetadata<T>(endpoint, { ...options, method: 'DELETE' }),
+  uploadWithMetadata: <T>(endpoint: string, formData: FormData) => requestWithMetadata<T>(endpoint, { method: 'POST', body: formData }),
   get: <T>(endpoint: string, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'GET' }),
   post: <T>(endpoint: string, body?: unknown, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
   put: <T>(endpoint: string, body?: unknown, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'PUT', body: body === undefined ? undefined : JSON.stringify(body) }),

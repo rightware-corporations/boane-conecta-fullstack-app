@@ -2,7 +2,7 @@ import { api } from '@/lib/api';
 import type { ApiResponse } from '@/types';
 
 import { isUuid } from './types';
-import type { DraftDetail, RequestDefinition, RequestDraft } from './types';
+import type { CitizenDocument, DraftDetail, DraftDocument, DraftValidation, RequestDefinition, RequestDraft } from './types';
 
 const draftsPath = '/citizen/request-drafts';
 
@@ -27,6 +27,10 @@ export const requestJourneyApi = {
     requireUuid(serviceId);
     const response = await api.get<ApiResponse<RequestDefinition>>(`/citizen/services/${serviceId}/request-definition`);
     return dataOf(response);
+  },
+  async pinnedDefinition(draftId: string): Promise<RequestDefinition> {
+    requireUuid(draftId);
+    return dataOf(await api.get<ApiResponse<RequestDefinition>>(`${draftsPath}/${draftId}/definition`));
   },
   async createOrResume(serviceId: string): Promise<DraftDetail> {
     requireUuid(serviceId);
@@ -57,5 +61,46 @@ export const requestJourneyApi = {
     const detail = draftResult(await api.patchWithMetadata<ApiResponse<RequestDraft>>(`${draftsPath}/${draftId}/answers`, { stepKey, answers }, { headers: { 'If-Match': etag } }), 200);
     if (detail.draft.id !== draftId) throw new Error('O rascunho devolvido não corresponde ao endereço.');
     return detail;
+  },
+  async draftDocuments(draftId: string): Promise<DraftDocument[]> {
+    requireUuid(draftId);
+    const result = dataOf(await api.get<ApiResponse<DraftDocument[]>>(`${draftsPath}/${draftId}/documents`));
+    if (!Array.isArray(result)) throw new Error('A lista de documentos é inválida.');
+    return result;
+  },
+  async citizenDocuments(): Promise<CitizenDocument[]> {
+    const result = dataOf(await api.get<ApiResponse<CitizenDocument[]>>('/citizen/documents'));
+    if (!Array.isArray(result)) throw new Error('A lista de documentos é inválida.');
+    return result;
+  },
+  async document(documentId: string): Promise<CitizenDocument> {
+    requireUuid(documentId);
+    return dataOf(await api.get<ApiResponse<CitizenDocument>>(`/citizen/documents/${documentId}`));
+  },
+  async upload(file: File): Promise<CitizenDocument> {
+    const data = new FormData(); data.append('file', file);
+    const response = await api.uploadWithMetadata<ApiResponse<CitizenDocument>>('/citizen/documents', data);
+    if (response.status !== 201) throw new Error('O envio não foi confirmado.');
+    const document = dataOf(response.body);
+    requireUuid(document.id);
+    return document;
+  },
+  async attach(draftId: string, requirementKey: string, documentId: string, etag: string): Promise<DraftDetail> {
+    requireUuid(draftId); requireUuid(documentId);
+    const response = await api.putWithMetadata<ApiResponse<{draft:RequestDraft; document:DraftDocument}>>(`${draftsPath}/${draftId}/documents/${encodeURIComponent(requirementKey)}`, { documentId }, { headers: { 'If-Match': etag } });
+    return draftResult({ ...response, body: { ...response.body, data: response.body.data?.draft } }, 200);
+  },
+  async detach(draftId: string, requirementKey: string, etag: string): Promise<DraftDetail> {
+    requireUuid(draftId);
+    const response = await api.deleteWithMetadata<ApiResponse<{draft:RequestDraft; document:DraftDocument}>>(`${draftsPath}/${draftId}/documents/${encodeURIComponent(requirementKey)}`, { headers: { 'If-Match': etag } });
+    return draftResult({ ...response, body: { ...response.body, data: response.body.data?.draft } }, 200);
+  },
+  async validate(draftId: string, etag: string): Promise<{ validation: DraftValidation; detail: DraftDetail }> {
+    requireUuid(draftId);
+    const response = await api.postWithMetadata<ApiResponse<DraftValidation>>(`${draftsPath}/${draftId}/validate`, undefined, { headers: { 'If-Match': etag } });
+    if (response.status !== 200 || !response.etag) throw new Error('A validação não confirmou a versão do rascunho.');
+    const validation = dataOf(response.body);
+    if (validation.draft.id !== draftId) throw new Error('A validação não corresponde ao rascunho.');
+    return { validation, detail: { draft: validation.draft, etag: response.etag } };
   },
 };

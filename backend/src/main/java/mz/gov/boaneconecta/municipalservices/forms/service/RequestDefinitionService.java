@@ -172,6 +172,14 @@ public class RequestDefinitionService {
         }
     }
 
+    /** Only call this with a version obtained through an owner-scoped draft lookup. */
+    public RequestDefinitionVersionResponse pinnedResponse(ServiceFormVersion version) {
+        if (!"citizen-request".equals(version.getDefinition().getDefinitionKey())) {
+            throw new ResourceNotFoundException("Request definition version not found");
+        }
+        return toResponse(version);
+    }
+
     private RequestDefinitionVersionResponse toResponse(ServiceFormVersion version) {
         MunicipalServiceVersion serviceVersion = version.getServiceVersion();
         ServiceFormDefinition definition = version.getDefinition();

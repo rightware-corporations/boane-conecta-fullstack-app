@@ -6,11 +6,11 @@ import { parseSteps } from './schema';
 const types = ['SHORT_TEXT','LONG_TEXT','EMAIL','PHONE','DATE','SINGLE_SELECT','INTEGER','DECIMAL','MULTI_SELECT','BOOLEAN','ADDRESS'];
 describe('S03 accessible field renderer',()=>{
   it.each(types)('renders backend field type %s with a published label or a clear block',type=>{
-    const raw={key:'test',label:'Dado publicado',type,options:['A','B']};
+    const raw={key:'test',label:'Dado publicado',type,options:['A','B'],addressFields:[{key:'component',label:'Componente publicado',required:true}]};
     const field=parseSteps({steps:[{key:'first',title:'Primeiro',fields:[raw]}]})[0].fields[0];
     render(<FieldRenderer field={field} value={null} disabled={false} onChange={vi.fn()} />);
     expect(screen.getAllByText('Dado publicado').length).toBeGreaterThan(0);
-    if(type==='ADDRESS') expect(screen.getByRole('alert')).toHaveTextContent('não tem estrutura publicada');
+    if(type==='ADDRESS') expect(screen.getByLabelText('Componente publicado *')).toBeInTheDocument();
     else if(type==='MULTI_SELECT') expect(screen.getByRole('group',{name:'Dado publicado'})).toBeInTheDocument();
     else expect(screen.getByLabelText('Dado publicado')).toBeInTheDocument();
   });

@@ -85,6 +85,23 @@ public class DraftValidationService {
                 if (value == null || value.isNull()) {
                     continue;
                 }
+                if ("ADDRESS".equals(field.path("type").asText()) && value.isObject()) {
+                    JsonNode components = field.path("addressFields");
+                    if (!components.isArray() || components.isEmpty()) {
+                        errors.add(fieldIssue(stepKey, fieldKey, "UNSUPPORTED_ADDRESS", "Este endereço não tem estrutura publicada para validação."));
+                        continue;
+                    }
+                    for (JsonNode component : components) {
+                        JsonNode part = value.get(component.path("key").asText());
+                        if (component.path("required").asBoolean(false) && isEmpty(part))
+                            errors.add(fieldIssue(stepKey, fieldKey, "REQUIRED_ADDRESS_PART", "Preencha os elementos obrigatórios do endereço."));
+                        if (part != null && part.isTextual()) {
+                            int length = part.asText().length();
+                            if (length < component.path("minLength").asInt(0) || length > component.path("maxLength").asInt(Integer.MAX_VALUE))
+                                errors.add(fieldIssue(stepKey, fieldKey, "ADDRESS_LENGTH", "Verifique o comprimento dos elementos do endereço."));
+                        }
+                    }
+                }
                 if (value.isTextual()) {
                     int length = value.asText().length();
                     int minimum = field.path("minLength").asInt(0);
@@ -146,6 +163,7 @@ public class DraftValidationService {
     private boolean isEmpty(JsonNode value) {
         return value == null || value.isNull()
                 || (value.isTextual() && value.asText().isBlank())
-                || (value.isArray() && value.isEmpty());
+                || (value.isArray() && value.isEmpty())
+                || (value.isObject() && value.isEmpty());
     }
 }

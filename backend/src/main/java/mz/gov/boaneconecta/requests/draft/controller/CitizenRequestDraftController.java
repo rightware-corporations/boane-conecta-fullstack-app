@@ -3,6 +3,7 @@ package mz.gov.boaneconecta.requests.draft.controller;
 import jakarta.validation.Valid;
 import mz.gov.boaneconecta.core.response.ApiResponse;
 import mz.gov.boaneconecta.core.security.UserDetailsImpl;
+import mz.gov.boaneconecta.municipalservices.forms.dto.RequestDefinitionVersionResponse;
 import mz.gov.boaneconecta.requests.draft.dto.CreateRequestDraftRequest;
 import mz.gov.boaneconecta.requests.draft.dto.RequestDraftResponse;
 import mz.gov.boaneconecta.requests.draft.dto.SaveDraftAnswersRequest;
@@ -72,6 +73,14 @@ public class CitizenRequestDraftController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.ETAG, etag(response.version()))
                 .body(ApiResponse.success("Request draft retrieved", response));
+    }
+
+    @GetMapping("/{draftId}/definition")
+    public ApiResponse<RequestDefinitionVersionResponse> definition(
+            @AuthenticationPrincipal UserDetailsImpl principal,
+            @PathVariable UUID draftId) {
+        return ApiResponse.success("Pinned request definition retrieved",
+                draftService.pinnedDefinition(principal.getId(), draftId));
     }
 
     @GetMapping

@@ -31,3 +31,7 @@ Preservar `PublicShell`/catálogo público, `CitizenLayout` + `CitizenShell` (si
 | S08 | `GET D` em carga; array vazio com ação catálogo. | 401 → login; 404 ao abrir → ocultar pormenores; draft expirado/antigo → bloqueio, preservar leitura do estado conhecido. | Foco no título da etapa recuperada; nunca aplicar alterações antes de obter ETag actual. |
 
 **Todas as etapas privadas:** `ProtectedRoute` + `RoleGuard(['municipe'])`; `401` interrompe mutações e solicita novo login com destino validado; `403` apresenta acesso negado; `404` genérico impede enumeração de IDs. Em qualquer erro, não apresentar uma alteração como guardada, não eliminar a entrada local enquanto a sessão corrente ainda permitir reconciliar e nunca incluir dados sensíveis em URL, logs ou capturas. Ver o protocolo detalhado em `BOANE_CONECTA_WF01_STATES_AND_ERRORS.md`.
+
+## Estado de implementação FE-04a (2026-09-25)
+
+S02, S03 e S08 consultam agora a definição **fixada no draft** através do endpoint owner-scoped C1, com correspondência dos três IDs de serviço/versões antes de renderizar. S04 e S05 usam rotas CITIZEN explícitas em `App.tsx`, `RequestJourneyShell` e guard de regresso após login. S04 distingue upload, scanner e associação; S05 apresenta os dados confirmados, validação backend e declaração fixada, mas não oferece submissão nesta entrega. Estados de resultado incerto permanecem bloqueados até consulta manual. Validação browser real, zoom 200% e isolamento A/B permanecem por executar.

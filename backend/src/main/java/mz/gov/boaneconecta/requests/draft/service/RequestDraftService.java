@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import mz.gov.boaneconecta.core.exception.ResourceConflictException;
 import mz.gov.boaneconecta.core.exception.ResourceNotFoundException;
 import mz.gov.boaneconecta.municipalservices.forms.entity.ServiceFormVersion;
+import mz.gov.boaneconecta.municipalservices.forms.dto.RequestDefinitionVersionResponse;
 import mz.gov.boaneconecta.municipalservices.forms.service.RequestDefinitionService;
 import mz.gov.boaneconecta.requests.draft.dto.CreateRequestDraftRequest;
 import mz.gov.boaneconecta.requests.draft.dto.RequestDraftResponse;
@@ -94,6 +95,17 @@ public class RequestDraftService {
     @Transactional(readOnly = true)
     public RequestDraftResponse get(UUID citizenUserId, UUID draftId) {
         return toResponse(requireOwnedDraft(citizenUserId, draftId));
+    }
+
+    @Transactional(readOnly = true)
+    public RequestDefinitionVersionResponse pinnedDefinition(UUID citizenUserId, UUID draftId) {
+        RequestDraft draft = requireOwnedDraft(citizenUserId, draftId);
+        ServiceFormVersion version = draft.getFormVersion();
+        if (!version.getServiceVersion().getId().equals(draft.getServiceVersion().getId())
+                || !version.getDefinition().getService().getId().equals(draft.getService().getId())) {
+            throw new ResourceNotFoundException("Request definition version not found");
+        }
+        return definitionService.pinnedResponse(version);
     }
 
     @Transactional(readOnly = true)
